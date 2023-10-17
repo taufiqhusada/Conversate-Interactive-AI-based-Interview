@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 export default class SymblService {
-  async transcribeVideo(videoUrl: string, appId: string, appSecret: string): Promise<Array<{ text: string, timeOffset: number, duration: number }>> {
+  async transcribeVideo(videoUrl: string, appId: string, appSecret: string): Promise<[Array<{ text: string, timeOffset: number, duration: number }>, string]> {
     try {
         // Authenticate with Symbl.ai
         const authResponse = await axios.post('https://api.symbl.ai/oauth2/token:generate', {
@@ -64,10 +64,44 @@ export default class SymblService {
             };
           });
 
-        return formattedTranscript;
+
+        // save data to backend async
+        postInterviewData({
+          sessionID: conversationId,
+          username_interviewer: 'interviewer_username',
+          username_interviewee: 'interviewee_username',
+          transcript_link: 'transcript_link_here',
+          video_link: videoUrl,
+        });
+
+        return [formattedTranscript, conversationId];
     } catch (error) {
       console.error('Symbl.ai error:', error);
       throw error;
     }
+  }
+}
+
+let backendURL = "http://127.0.0.1:5000"
+
+async function postInterviewData(data: {
+  sessionID: string;
+  username_interviewer: string;
+  username_interviewee: string;
+  transcript_link: string;
+  video_link: string;
+}): Promise<void> {
+  const apiUrl = `${backendURL}/interviews`; // Replace with your API URL
+
+  try {
+    const response = await axios.post(apiUrl, data);
+
+    if (response.status === 200) {
+      console.log('interveiw data saved successfully:', response.data);
+    } else {
+      console.error('Failed to send data:', response.status, response.data);
+    }
+  } catch (error) {
+    console.error('Error while sending data:', error);
   }
 }
