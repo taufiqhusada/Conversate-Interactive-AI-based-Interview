@@ -34,7 +34,8 @@ export default defineComponent({
   height: 50vh;
   padding: 1em;
   overflow: auto;
-  max-width: 400px;
+  width: 480px;
+  height: fit-content;
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
 }
