@@ -48,7 +48,6 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
-import Chatbox from '@/components/chatbox.vue';
 
 type SavedData = {
     secondStart: number;
@@ -68,9 +67,6 @@ interface ChatMessage {
 
 
 export default defineComponent({
-    components: {
-        Chatbox,
-    },
     props: {
         showAnnotationTextboxes: {
             type: Boolean,
