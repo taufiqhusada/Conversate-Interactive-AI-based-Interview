@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="form-group">
+    <div class="form-group mb-2">
       <input type="file" @change="uploadVideo" accept="video/*" />
     </div>
     <video v-if="videoUrl" controls width="640" height="360">
@@ -36,10 +36,10 @@ export default defineComponent({
           const symblService = new SymblService();
 
           try {
-            const transcript = await symblService.transcribeVideo(videoUrl.value || '', appId, appSecret);
+            const [transcript, sessionID] = await symblService.transcribeVideo(videoUrl.value || '', appId, appSecret);
             console.log('Transcript:', transcript);
 
-            context.emit('transcript-updated', transcript)
+            context.emit('transcript-updated', transcript, sessionID)
           } catch (error) {
             console.error('Error transcribing video:', error);
           }

@@ -31,18 +31,33 @@ export default defineComponent({
 .chat-area {
   border: 1px solid #ccc;
   background: white;
-  height: 50vh;
+  height: 33vh;
   padding: 1em;
   overflow: auto;
-  max-width: 400px;
+  width: 40rem;
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column; 
+  align-items: center; 
+  margin-top: 1em;
+  margin-bottom: 1em;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 40rem;
+  z-index: 2;
+  box-sizing: border-box;
+  border-radius: 1rem;
 }
 .message {
-  width: 90%;
+  width: 95%;
   border-radius: 10px;
   padding: .5em;
   margin-bottom: .5em;
+  margin-top: .5em;
   font-size: .8em;
 }
 .message-in {
