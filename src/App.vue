@@ -1,4 +1,7 @@
+
+import type TheFooterVue from './components/TheFooter.vue';
 <template>
+  <TheHeader></TheHeader>
   <div class="container">
     <br>
     <h1>Mock Interview Annotation Tool</h1>
@@ -7,9 +10,13 @@
             <VideoUploader @transcript-updated="updateTranscript"  />
             <AnnotationTextboxes :showAnnotationTextboxes="showAnnotationTextboxes" :transcript="transcript" :sessionID="sessionID"/> 
         </div>
-        <TranscriptDisplay :transcript="transcript" class="col-sm-6"/>
+        <div class="col-sm-6">
+          <TranscriptDisplay :transcript="transcript"/>
+          <Feedback :initial-settings="{ updateSettings }"/>
+        </div>
     </div>
   </div>
+  <TheFooter></TheFooter>
 </template>
 
 <script lang="ts">
@@ -17,13 +24,19 @@ import { ref } from 'vue';
 import VideoUploader from '@/components/VideoUploader.vue';
 import TranscriptDisplay from '@/components/TranscriptDisplay.vue';
 import AnnotationTextboxes from '@/components/AnnotationTextboxes.vue';
+import TheHeader from './components/TheHeader.vue';
+import TheFooter from './components/TheFooter.vue';
+import Feedback from '@/components/Feedback.vue';
 
 export default {
   components: {
     VideoUploader,
     TranscriptDisplay,
-    AnnotationTextboxes
-  },
+    AnnotationTextboxes,
+    TheHeader,
+    TheFooter,
+    Feedback,
+},
   setup() {
     const transcript = ref([]);
     const showAnnotationTextboxes = ref(false)
@@ -49,5 +62,19 @@ export default {
 </script>
 
 <style scoped>
+.row {
+  display: inline-block;
+  width: 50%;
+  height: auto;
+  overflow-y: auto;
+}
+
+.column {
+  display: inline-block;
+  width: 50%;
+  height: auto;
+  overflow-y: auto;
+}
+
 
 </style>
