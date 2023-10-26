@@ -3,7 +3,7 @@
     <div class="form-group mb-2">
       <input type="file" @change="uploadVideo" accept="video/*" />
     </div>
-    <video v-if="videoUrl" controls width="480" height="270">
+    <video v-if="videoUrl" controls width="640" height="360">
       <source :src="videoUrl" type="video/mp4" />
     </video>
   </div>
