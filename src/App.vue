@@ -6,10 +6,10 @@
     <div class="row">
       <div class="col-sm-6">
         <VideoUploader @transcript-updated="updateTranscript" />
-        <TranscriptDisplay :transcript="transcript"/>
+        <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"/>
       </div>
       <Feedback class="col-sm-6" :showAnnotationTextboxes="showAnnotationTextboxes" :transcript="transcript"
-        :sessionID="sessionID" />
+        :sessionID="sessionID" @highlight-transcript="setHighlightTranscript"  />
 
     </div>
   </div>
@@ -36,6 +36,7 @@ export default {
     const transcript = ref([]);
     const showAnnotationTextboxes = ref(false)
     const sessionID = ref("")
+    const timestampHighlightsData = ref<[number, number][]>([])
     // Method to update the transcript when it is obtained
     const updateTranscript = (newTranscript: never[], passedSessionID: string) => {
       console.log("called in");
@@ -47,11 +48,19 @@ export default {
       sessionID.value = passedSessionID
     };
 
+    const setHighlightTranscript = (data: [number, number]) => {
+      timestampHighlightsData.value = [];
+      timestampHighlightsData.value.push(data);
+      console.log(timestampHighlightsData.value)
+    };
+
     return {
       transcript,
       updateTranscript,
       showAnnotationTextboxes,
       sessionID,
+      timestampHighlightsData,
+      setHighlightTranscript
     };
   },
 };

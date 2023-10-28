@@ -243,6 +243,10 @@ export default defineComponent({
             }
         },
 
+        async highlightTranscript() {
+        // Emit the updated startTime and endTime to the parent component
+            this.$emit('highlight-transcript', [this.startTime, this.endTime]);
+        },
     },
 
     watch: {
@@ -261,6 +265,14 @@ export default defineComponent({
                     console.error('Error while fetching saved data:', error);
                 }
             }
+        },
+        startTime(newValue) {
+            // When startTime changes, emit the changes to the parent component
+            this.highlightTranscript();
+        },
+        endTime(newValue) {
+            // When endTime changes, emit the changes to the parent component
+            this.highlightTranscript();
         },
     },
 });
@@ -288,14 +300,12 @@ export default defineComponent({
     flex-direction: column;
     justify-content: space-between;
     width: 40rem;
-    height: 20rem;
+    height: 30rem;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
     background: white;
-    box-shadow:
-        0 0 8rem 0 rgba(0, 0, 0, 0.1),
-        0rem 2rem 4rem -3rem rgba(0, 0, 0, 0.5);
+    box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
 }
 
 .messages {
@@ -401,9 +411,7 @@ input {
     margin-right: 1rem;
     border-radius: 1.125rem;
     flex-grow: 2;
-    box-shadow:
-        0 0 1rem rgba(0, 0, 0, 0.1),
-        0rem 1rem 1rem -1rem rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
 }
 
 input::placeholder {
