@@ -59,6 +59,9 @@ export default defineComponent({
           },
           () => {
             uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+              // uploaded successfully but still waiting for transcript
+              context.emit('video-uploaded', true)
+
               videoUrl.value = downloadURL;
               const appId = import.meta.env.VITE_SYMBL_APP_ID;
               const appSecret = import.meta.env.VITE_SYMBL_APP_SECRET;
