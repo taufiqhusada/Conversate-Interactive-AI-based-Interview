@@ -1,8 +1,8 @@
 <template>
-  <div v-if="transcript.length != 0" >
+  <div v-if="transcript.length !== 0">
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
-      <div v-for="(message, index) in transcript" :key="index" class="message message-in" >
+      <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)">
         <b>{{ message.timeOffset }}:</b> 
         {{ message.text }} 
       </div>
@@ -10,18 +10,72 @@
   </div>
 </template>
 
+
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, ref, watch } from 'vue';
+
+interface TranscriptMessage {
+  text: string;
+  timeOffset: number;
+  duration: number;
+}
 
 export default defineComponent({
   props: {
     transcript: {
-      type: Array as () => Array<{ text: string, timeOffset: number, duration: number }>,
+      type: Array as () => Array<TranscriptMessage>,
+      required: true,
+    },
+    timestampHighlights: {
+      type: Array as () => Array<[number, number]>,
       required: true,
     },
   },
+  setup(props) {
+    const chatArea = ref<HTMLElement | null>(null);
+
+    const messageHighlight = (message: TranscriptMessage) => {
+      return isInHighlightedRange(message.timeOffset) ? 'message message-in highlight' : 'message message-in';
+    };
+
+    const isInHighlightedRange = (timeOffset: number) => {
+      return props.timestampHighlights.some(([start, end]) => timeOffset >= start && timeOffset <= end);
+    };
+
+    watch(() => props.timestampHighlights, () => {
+      applyHighlighting();
+    });
+
+    const applyHighlighting = () => {
+      const area = chatArea.value;
+      if (area && props.transcript.length > 0) {
+        const messages = area.querySelectorAll('.message') as NodeListOf<HTMLElement>;
+        let scrolled = false;
+
+        messages.forEach((message: HTMLElement, index: number) => {
+          const timeOffset = props.transcript[index].timeOffset;
+          if (isInHighlightedRange(timeOffset)) {
+            message.classList.add('highlight');
+
+            if (!scrolled) {
+              message.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              scrolled = true;
+            }
+          } else {
+            message.classList.remove('highlight');
+          }
+        });
+      }
+    };
+
+    return {
+      chatArea,
+      messageHighlight,
+    };
+  },
 });
 </script>
+
 
 <style scoped>
 
@@ -63,6 +117,11 @@ export default defineComponent({
 .message-in {
   background: #F1F0F0;
   color: black;
+}
+
+.highlight {
+  background: #ffd427; /* Highlight color */
+  /* Add other styles for highlighting */
 }
 
 </style>
