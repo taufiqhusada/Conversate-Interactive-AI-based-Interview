@@ -2,7 +2,7 @@
   <div>
     <template v-if="!videoUrl">
       <!-- Show uploader if the video has not been uploaded -->
-      <form ref="fileUploadForm" class="uploader">
+      <form ref="fileUploadForm" class="uploader absolute-center">
         <input type="file" accept="video/*" @change="uploadFile" />
 
         <label for="file-upload">
@@ -293,4 +293,12 @@ export default defineComponent({
   border-color: #454cad; */
   cursor: pointer;
 }
+
+.absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 </style>
