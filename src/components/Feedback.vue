@@ -20,13 +20,13 @@
             </div>
             <div id="chat-messages" class="messages" ref="messages">
                 <div v-for="(message, index) in chatMessages" :key="index">
-                    <div :class="message.sender === 'user' ? 'message user' : 'message bot'">
-                        <div v-if="message.sender === 'bot' && message.isTyping" class="typing">
+                    <div :class="message.role === 'user' ? 'message user' : 'message bot'">
+                        <div v-if="message.role === 'assistant' && message.isTyping" class="typing">
                             <div class="dot dot-1"></div>
                             <div class="dot dot-2"></div>
                             <div class="dot dot-3"></div>
                         </div>
-                        <div v-else>{{ message.text }}</div>
+                        <div v-else>{{ message.content }}</div>
                     </div>
                 </div>
             </div>
@@ -60,9 +60,14 @@ type SavedData = {
 };
 
 interface ChatMessage {
-    text: string;
-    sender: 'user' | 'bot';
+    content: string;
+    role: 'user' | 'assistant';
     isTyping: boolean;
+}
+
+interface ChatMessageBackend {
+    content: string;
+    role: 'user' | 'assistant';
 }
 
 
@@ -93,6 +98,7 @@ export default defineComponent({
             currentIndex: -1,
             showChatbox: false,
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
+            firstTimeChat: true,
             backendURL: "http://127.0.0.1:5000",
         };
     },
@@ -103,45 +109,80 @@ export default defineComponent({
             }
 
             // Add user message to the chat
-            this.chatMessages.push({ text: this.question, sender: 'user', isTyping: false });
+            this.chatMessages.push({ content: this.question, role: 'user', isTyping: false });
 
             // Simulate a bot response with typing animation
-            this.chatMessages.push({ text: 'Bot is typing...', sender: 'bot', isTyping: true });
+            this.chatMessages.push({ content: 'Bot is typing...', role: 'assistant', isTyping: true });
 
 
             this.scrollToBottom();
+            
+            if (this.firstTimeChat){
+                const requestBody = {
+                    comment: this.annotation,
+                    transcript: this.getTranscript(this.startTime, this.endTime),
+                    question: this.question,
+                };
 
-            const requestBody = {
-                comment: this.annotation,
-                transcript: this.getTranscript(this.startTime, this.endTime),
-                question: this.question,
-            };
+                this.question = '';
 
-            this.question = '';
+                console.log(requestBody);
 
-            console.log(requestBody);
-
-            try {
-
-                // Make a POST request to your API
-                const response = await axios.post(`${this.backendURL}/feedbacks`, requestBody);
-
-                this.chatMessages.pop();
-                if (response.status === 200) {
-                    // Update the feedback field with the response from GPT-4
-                    this.feedback = response.data.data;
-                    this.scrollToBottom();
-                    this.chatMessages.push({ text: this.feedback, sender: 'bot', isTyping: false });
-                } else {
-                    // Handle API response error
-                    console.error('Failed to get feedback from GPT-4:', response.status, response.data);
-                    this.scrollToBottom();
-                    this.chatMessages.push({ text: 'Failed to get feedback from GPT-4', sender: 'bot', isTyping: false });
+                try {
+                    // Make a POST request to your API
+                    const response = await axios.post(`${this.backendURL}/feedbacks`, requestBody);
+                    this.chatMessages.pop();
+                    if (response.status === 200) {
+                        // Update the feedback field with the response from GPT-4
+                        this.firstTimeChat = false
+                        this.feedback = response.data.data;
+                        this.scrollToBottom();
+                        this.chatMessages.push({ content: this.feedback, role: 'assistant', isTyping: false });
+                        this.chatMessages.push({ content: "Do you want to try saying this part again in a better way? I can give you feedback again based on that", role: 'assistant', isTyping: false });
+                    } else {
+                        // Handle API response error
+                        console.error('Failed to get feedback from GPT-4:', response.status, response.data);
+                        this.scrollToBottom();
+                        this.chatMessages.push({ content: 'Failed to get feedback from GPT-4', role: 'assistant', isTyping: false });
+                    }
+                } catch (error) {
+                    // Handle network or other errors
+                    console.error('Error while requesting feedback from GPT-4:', error);
                 }
-            } catch (error) {
-                // Handle network or other errors
-                console.error('Error while requesting feedback from GPT-4:', error);
+            } else {
+                const requestBody = {
+                    messages: this.mapChatMessagesToBackendFormat(this.chatMessages.slice(0, -1))
+                };
+
+                this.question = '';
+
+                console.log(requestBody);
+
+                try {
+                    // Make a POST request to your API
+                    const response = await axios.post(`${this.backendURL}/feedbacks/conversation`, requestBody);
+                    this.chatMessages.pop();
+                    if (response.status === 200) {
+                        // Update the feedback field with the response from GPT-4
+                        this.scrollToBottom();
+                        const repliedMessage = response.data.data;
+                        this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false });
+                    } else {
+                        // Handle API response error
+                        console.error('Failed to get chat from GPT-4:', response.status, response.data);
+                        this.scrollToBottom();
+                    }
+                } catch (error) {
+                    // Handle network or other errors
+                    console.error('Error while chatting with GPT-4:', error);
+                }
             }
+          
+        },
+
+        mapChatMessagesToBackendFormat(chatMessages: ChatMessage[]) {
+            const chatMessagesWithoutTyping = chatMessages.map(({ isTyping, ...rest }) => rest);
+            return chatMessagesWithoutTyping;
         },
 
         async askGPT() {
