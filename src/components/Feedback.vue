@@ -99,7 +99,7 @@ export default defineComponent({
             showChatbox: false,
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             firstTimeChat: true,
-            backendURL: "http://127.0.0.1:5000",
+            backendURL: import.meta.env.VITE_BACKEND_URL,
         };
     },
     methods: {
