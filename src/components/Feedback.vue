@@ -240,6 +240,7 @@ export default defineComponent({
         },
 
         navigateBack() {
+            this.firstTimeChat = false
             if (this.currentIndex > 0) {
                 // Decrement the currentIndex to go back to the previous entry
                 this.currentIndex--;
@@ -248,6 +249,7 @@ export default defineComponent({
             }
         },
         navigateNext() {
+            this.firstTimeChat = true
             if (this.currentIndex < this.savedData.length - 1) {
                 // Increment the currentIndex to go to the next entry
                 this.currentIndex++;
