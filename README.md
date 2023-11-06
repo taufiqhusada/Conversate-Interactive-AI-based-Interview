@@ -19,3 +19,7 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Code Structure
+- main vue code is in `src/App.vue`
+- each components is on `src/components/`
