@@ -98,7 +98,6 @@ export default defineComponent({
             currentIndex: -1,
             showChatbox: false,
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
-            firstTimeChat: true,
             backendURL: import.meta.env.VITE_BACKEND_URL,
         };
     },
@@ -116,68 +115,41 @@ export default defineComponent({
 
 
             this.scrollToBottom();
-            
-            if (this.firstTimeChat){
-                const requestBody = {
-                    comment: this.annotation,
-                    transcript: this.getTranscript(this.startTime, this.endTime),
-                    question: this.question,
-                };
 
-                this.question = '';
 
-                console.log(requestBody);
+            const requestBody = {
+                comment: this.annotation,
+                transcript: this.getTranscript(this.startTime, this.endTime),
+                messages: this.mapChatMessagesToBackendFormat(this.chatMessages.slice(0, -1))
+            };
 
-                try {
-                    // Make a POST request to your API
-                    const response = await axios.post(`${this.backendURL}/feedbacks`, requestBody);
-                    this.chatMessages.pop();
-                    if (response.status === 200) {
-                        // Update the feedback field with the response from GPT-4
-                        this.firstTimeChat = false
-                        this.feedback = response.data.data;
-                        this.scrollToBottom();
-                        this.chatMessages.push({ content: this.feedback, role: 'assistant', isTyping: false });
+            this.question = '';
+
+            console.log(requestBody);
+
+            try {
+                // Make a POST request to your API
+                const response = await axios.post(`${this.backendURL}/feedbacks/conversation`, requestBody);
+                this.chatMessages.pop();
+                if (response.status === 200) {
+                    // Update the feedback field with the response from GPT-4
+                    this.scrollToBottom();
+                    const repliedMessage = response.data.data;
+                    this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false });
+                    if (this.chatMessages.length == 2) {
                         this.chatMessages.push({ content: "Do you want to try saying this part again in a better way? I can give you feedback again based on that", role: 'assistant', isTyping: false });
-                    } else {
-                        // Handle API response error
-                        console.error('Failed to get feedback from GPT-4:', response.status, response.data);
-                        this.scrollToBottom();
-                        this.chatMessages.push({ content: 'Failed to get feedback from GPT-4', role: 'assistant', isTyping: false });
                     }
-                } catch (error) {
-                    // Handle network or other errors
-                    console.error('Error while requesting feedback from GPT-4:', error);
+                } else {
+                    // Handle API response error
+                    console.error('Failed to get chat from GPT-4:', response.status, response.data);
+                    this.scrollToBottom();
                 }
-            } else {
-                const requestBody = {
-                    messages: this.mapChatMessagesToBackendFormat(this.chatMessages.slice(0, -1))
-                };
-
-                this.question = '';
-
-                console.log(requestBody);
-
-                try {
-                    // Make a POST request to your API
-                    const response = await axios.post(`${this.backendURL}/feedbacks/conversation`, requestBody);
-                    this.chatMessages.pop();
-                    if (response.status === 200) {
-                        // Update the feedback field with the response from GPT-4
-                        this.scrollToBottom();
-                        const repliedMessage = response.data.data;
-                        this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false });
-                    } else {
-                        // Handle API response error
-                        console.error('Failed to get chat from GPT-4:', response.status, response.data);
-                        this.scrollToBottom();
-                    }
-                } catch (error) {
-                    // Handle network or other errors
-                    console.error('Error while chatting with GPT-4:', error);
-                }
+            } catch (error) {
+                // Handle network or other errors
+                console.error('Error while chatting with GPT-4:', error);
             }
-          
+
+
         },
 
         mapChatMessagesToBackendFormat(chatMessages: ChatMessage[]) {
@@ -224,7 +196,7 @@ export default defineComponent({
                     this.annotation = '';
                     this.question = '';
                     this.feedback = '';
-                    this.chatMessages =  [] as ChatMessage[]
+                    this.chatMessages = [] as ChatMessage[]
 
                     // Push the saved data to the savedData array
                     this.savedData.push(dataToSave);
@@ -240,7 +212,6 @@ export default defineComponent({
         },
 
         navigateBack() {
-            this.firstTimeChat = false
             if (this.currentIndex > 0) {
                 // Decrement the currentIndex to go back to the previous entry
                 this.currentIndex--;
@@ -249,7 +220,6 @@ export default defineComponent({
             }
         },
         navigateNext() {
-            this.firstTimeChat = true
             if (this.currentIndex < this.savedData.length - 1) {
                 // Increment the currentIndex to go to the next entry
                 this.currentIndex++;
@@ -261,7 +231,7 @@ export default defineComponent({
                 this.annotation = '';
                 this.question = '';
                 this.feedback = '';
-                this.chatMessages =  [] as ChatMessage[]
+                this.chatMessages = [] as ChatMessage[]
 
                 this.currentIndex++;
             }
@@ -281,13 +251,13 @@ export default defineComponent({
             const messagesContainer = this.$refs.messages as HTMLElement;
             if (messagesContainer) {
                 this.$nextTick(() => {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 });
             }
         },
 
         async highlightTranscript() {
-        // Emit the updated startTime and endTime to the parent component
+            // Emit the updated startTime and endTime to the parent component
             this.$emit('highlight-transcript', [this.startTime, this.endTime]);
         },
     },
@@ -470,4 +440,5 @@ input::placeholder {
 
 .show-chatbox .chat {
     opacity: 0;
-}</style>
+}
+</style>
