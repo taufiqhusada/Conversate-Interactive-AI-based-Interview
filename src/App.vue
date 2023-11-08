@@ -5,13 +5,13 @@
     <div class="row">
       <div class="col-sm-6">
         <div class="video-uploader-container">
-          <VideoUploader @transcript-updated="updateTranscript" @video-uploaded="startLoadingTranscript" />
+          <VideoUploader @transcript-updated="updateTranscript" @video-uploaded="startLoadingTranscript" @video-seek-time-updated="updateCurrentVideoSeekTime" />
         </div>
         <div class="col-sm-12 text-center mt-3" v-if="transcriptLoading">
           <Loader></Loader>
         </div>
         <div class="col-sm-12 mt-3">
-          <TranscriptDisplay v-if="!transcriptLoading" :transcript="transcript" :timestampHighlights="timestampHighlightsData"/>
+          <TranscriptDisplay v-if="!transcriptLoading" :transcript="transcript" :timestampHighlights="timestampHighlightsData" :currentVideoSeekTime="currentVideoSeekTime"/>
         </div>
       </div>
       <div class="col-sm-6">
@@ -47,6 +47,7 @@ export default {
     const sessionID = ref("")
     const timestampHighlightsData = ref<[number, number][]>([])
     const transcriptLoading = ref(false);
+    const currentVideoSeekTime = ref<number>(0)
 
     // Method to update the transcript when it is obtained
     const updateTranscript = (newTranscript: never[], passedSessionID: string) => {
@@ -65,11 +66,14 @@ export default {
     const setHighlightTranscript = (data: [number, number]) => {
       timestampHighlightsData.value = [];
       timestampHighlightsData.value.push(data);
-      console.log(timestampHighlightsData.value)
     };
 
     const startLoadingTranscript = (value: boolean) => {
       transcriptLoading.value = true
+    }
+
+    const updateCurrentVideoSeekTime = (seekTime: number) => {
+      currentVideoSeekTime.value = seekTime
     }
 
     return {
@@ -80,7 +84,9 @@ export default {
       timestampHighlightsData,
       setHighlightTranscript,
       transcriptLoading,
-      startLoadingTranscript
+      startLoadingTranscript,
+      updateCurrentVideoSeekTime,
+      currentVideoSeekTime
     };
   },
 };

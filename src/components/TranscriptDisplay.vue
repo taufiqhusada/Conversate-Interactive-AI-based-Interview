@@ -3,8 +3,8 @@
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)">
-        <b>{{ message.timeOffset }}:</b> 
-        {{ message.text }} 
+        <b>{{ message.timeOffset }}:</b>
+        {{ message.text }}
       </div>
     </section>
   </div>
@@ -30,9 +30,14 @@ export default defineComponent({
       type: Array as () => Array<[number, number]>,
       required: true,
     },
+    currentVideoSeekTime: {
+      type: Number,
+      required: false
+    }
   },
   setup(props) {
     const chatArea = ref<HTMLElement | null>(null);
+    let highlightedIndex = -1;
 
     const messageHighlight = (message: TranscriptMessage) => {
       return isInHighlightedRange(message.timeOffset) ? 'message message-in highlight' : 'message message-in';
@@ -43,10 +48,10 @@ export default defineComponent({
     };
 
     watch(() => props.timestampHighlights, () => {
-      applyHighlighting();
+      applyHighlightingBasedOnSelection();
     });
 
-    const applyHighlighting = () => {
+    const applyHighlightingBasedOnSelection = () => {
       const area = chatArea.value;
       if (area && props.transcript.length > 0) {
         const messages = area.querySelectorAll('.message') as NodeListOf<HTMLElement>;
@@ -68,6 +73,56 @@ export default defineComponent({
       }
     };
 
+    watch(() => props.currentVideoSeekTime, () => {
+      applyHighlightingBasedOnSeekTime();
+    });
+
+    const applyHighlightingBasedOnSeekTime = () => {
+      const area = chatArea.value;
+      if (area && props.transcript.length > 0 && props.currentVideoSeekTime !== undefined) {
+        if (highlightedIndex !== -1) {
+          const prevHighlightedMessage = area.querySelector(`.message:nth-child(${highlightedIndex + 1})`);
+          if (prevHighlightedMessage) {
+            prevHighlightedMessage.classList.remove('highlight-seek-time');
+          }
+        }
+
+        let closestIndex = -1;
+
+        // Find the index of the transcript closest to or slightly greater than currentVideoSeekTime
+        // for (let i = 0; i < props.transcript.length; i++) {
+        //   if (props.transcript[i].timeOffset >= props.currentVideoSeekTime) {
+        //     closestIndex = i;
+        //     break;
+        //   }
+        // }
+
+        let low = 0;
+        let high = props.transcript.length - 1;
+
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          const currentTimeOffset = props.transcript[mid].timeOffset;
+
+          if (currentTimeOffset >= props.currentVideoSeekTime) {
+            closestIndex = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        if (closestIndex !== -1) {
+          const closestMessage = area.querySelector(`.message:nth-child(${closestIndex + 1})`);
+          if (closestMessage) {
+            closestMessage.classList.add('highlight-seek-time');
+            closestMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            highlightedIndex = closestIndex;
+          }
+        }
+      }
+    };
+
     return {
       chatArea,
       messageHighlight,
@@ -78,10 +133,10 @@ export default defineComponent({
 
 
 <style scoped>
-
 .headline {
   text-align: center;
 }
+
 .chat-area {
   border: 1px solid #ccc;
   background: white;
@@ -92,8 +147,8 @@ export default defineComponent({
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
   display: flex;
-  flex-direction: column; 
-  align-items: center; 
+  flex-direction: column;
+  align-items: center;
   margin-top: 1em;
   margin-bottom: 1em;
 
@@ -106,6 +161,7 @@ export default defineComponent({
   box-sizing: border-box;
   border-radius: 1rem;
 }
+
 .message {
   width: 95%;
   border-radius: 10px;
@@ -114,14 +170,21 @@ export default defineComponent({
   margin-top: .5em;
   font-size: .8em;
 }
+
 .message-in {
   background: #F1F0F0;
   color: black;
 }
 
 .highlight {
-  background: #ffd427; /* Highlight color */
+  background: #ffd427;
+  /* Highlight color */
   /* Add other styles for highlighting */
 }
 
+.highlight-seek-time {
+  background: #96ff81;
+  /* Highlight color */
+  /* Add other styles for highlighting */
+}
 </style>

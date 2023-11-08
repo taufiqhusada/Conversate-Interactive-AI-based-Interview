@@ -22,7 +22,7 @@
       </form>
     </template>
 
-    <video v-else controls width="640" height="360">
+    <video v-else controls width="640" height="360" ref="videoPlayer" @timeupdate="updateSeekTime">
       <source :src="videoUrl" type="video/mp4" />
     </video>
   </div>
@@ -37,7 +37,9 @@ import SymblService from '@/services/symblService';
 export default defineComponent({
   setup(prop, context) {
     const videoUrl = ref<string | null>(null);
+    const videoPlayer = ref<HTMLVideoElement | null>(null);
     const fileProgress = ref<HTMLProgressElement | null>(null);
+    const prevVideoSeekTime = ref<number>(0);
 
     const uploadFile = async (event: Event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
@@ -113,6 +115,16 @@ export default defineComponent({
       }
     };
 
+    const updateSeekTime = () => {
+      if (videoPlayer.value) {
+        const currentTime = videoPlayer.value.currentTime;
+        if (Math.abs(currentTime - prevVideoSeekTime.value) >= 0.5){
+          prevVideoSeekTime.value = currentTime;
+          context.emit('video-seek-time-updated', currentTime);
+        }
+      }
+    };
+
     const Init = () => {
       // Your Init logic remains the same
     };
@@ -137,14 +149,15 @@ export default defineComponent({
       output,
       setProgressMaxValue,
       updateFileProgress,
-      Init
+      Init,
+      updateSeekTime,
+      videoPlayer,
     };
   }
 });
 </script>
 
 <style scoped>
-
 .uploader {
   display: block;
   clear: both;
@@ -254,12 +267,12 @@ export default defineComponent({
 
 .uploader .progress[value]::-webkit-progress-value {
   background: linear-gradient(to right, #3f4b97 0%, #454cad 50%);
-  border-radius: 4px; 
+  border-radius: 4px;
 }
 
 .uploader .progress[value]::-moz-progress-bar {
   background: linear-gradient(to right, #3f4b97 0%, #454cad 50%);
-  border-radius: 4px; 
+  border-radius: 4px;
 }
 
 .uploader input[type="file"] {
@@ -300,5 +313,4 @@ export default defineComponent({
   left: 50%;
   transform: translate(-50%, -50%);
 }
-
 </style>
