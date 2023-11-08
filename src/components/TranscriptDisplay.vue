@@ -2,8 +2,8 @@
   <div v-if="transcript.length !== 0">
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
-      <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)">
-        <b>{{ message.timeOffset }}:</b>
+      <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
+        <b>{{ convertTimeToHHMMSS(message.timeOffset) }}:</b>
         {{ message.text }}
       </div>
     </section>
@@ -35,12 +35,27 @@ export default defineComponent({
       required: false
     }
   },
-  setup(props) {
+  methods: {
+    convertTimeToHHMMSS(timeOffset: number): string {
+      const date = new Date(timeOffset * 1000);
+      const hours = date.getUTCHours();
+      const minutes = date.getUTCMinutes();
+      const seconds = date.getUTCSeconds();
+
+      // Display format as hh:mm:ss
+      return (
+        (hours < 10 ? '0' : '') + hours + ':' +
+        (minutes < 10 ? '0' : '') + minutes + ':' +
+        (seconds < 10 ? '0' : '') + seconds
+      );
+    },
+  },
+  setup(props, context) {
     const chatArea = ref<HTMLElement | null>(null);
     let highlightedIndex = -1;
 
     const messageHighlight = (message: TranscriptMessage) => {
-      return isInHighlightedRange(message.timeOffset) ? 'message message-in highlight' : 'message message-in';
+      return isInHighlightedRange(message.timeOffset) ? 'btn message message-in highlight' : 'btn message message-in';
     };
 
     const isInHighlightedRange = (timeOffset: number) => {
@@ -104,28 +119,36 @@ export default defineComponent({
           const mid = Math.floor((low + high) / 2);
           const currentTimeOffset = props.transcript[mid].timeOffset;
 
-          if (currentTimeOffset >= props.currentVideoSeekTime) {
+          if (currentTimeOffset - props.currentVideoSeekTime <= 0.001) {
             closestIndex = mid;
-            high = mid - 1;
-          } else {
             low = mid + 1;
+          } else {
+            high = mid - 1;
           }
         }
 
+
         if (closestIndex !== -1) {
-          const closestMessage = area.querySelector(`.message:nth-child(${closestIndex + 1})`);
+          const closestMessage = area.querySelector(`.message:nth-child(${closestIndex+2})`);
           if (closestMessage) {
             closestMessage.classList.add('highlight-seek-time');
             closestMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            highlightedIndex = closestIndex;
+            highlightedIndex = closestIndex+1;
           }
         }
       }
     };
 
+    const handleTranscriptClick = (message: TranscriptMessage) => {
+      // Handle the click event, you can perform actions here
+      context.emit('transcript-clicked', message.timeOffset);
+    };
+  
+
     return {
       chatArea,
       messageHighlight,
+      handleTranscriptClick
     };
   },
 });
@@ -169,6 +192,7 @@ export default defineComponent({
   margin-bottom: .5em;
   margin-top: .5em;
   font-size: .8em;
+  text-align: left;
 }
 
 .message-in {
@@ -177,13 +201,14 @@ export default defineComponent({
 }
 
 .highlight {
-  background: #ffd427;
+  background: #ffeca2;
   /* Highlight color */
   /* Add other styles for highlighting */
 }
 
 .highlight-seek-time {
-  background: #96ff81;
+  --tw-text-opacity: 1;
+  background: rgb(250, 200, 200);
   /* Highlight color */
   /* Add other styles for highlighting */
 }

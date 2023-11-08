@@ -5,13 +5,14 @@
     <div class="row">
       <div class="col-sm-6">
         <div class="video-uploader-container">
-          <VideoUploader @transcript-updated="updateTranscript" @video-uploaded="startLoadingTranscript" @video-seek-time-updated="updateCurrentVideoSeekTime" />
+          <VideoUploader @transcript-updated="updateTranscript" @video-uploaded="startLoadingTranscript" @video-seek-time-updated="updateCurrentVideoSeekTime" :clickedTranscriptTime="clickedTranscriptTime" />
         </div>
         <div class="col-sm-12 text-center mt-3" v-if="transcriptLoading">
           <Loader></Loader>
         </div>
         <div class="col-sm-12 mt-3">
-          <TranscriptDisplay v-if="!transcriptLoading" :transcript="transcript" :timestampHighlights="timestampHighlightsData" :currentVideoSeekTime="currentVideoSeekTime"/>
+          <TranscriptDisplay v-if="!transcriptLoading" :transcript="transcript" :timestampHighlights="timestampHighlightsData" :currentVideoSeekTime="currentVideoSeekTime"
+          @transcript-clicked="handleTranscriptClick"/>
         </div>
       </div>
       <div class="col-sm-6">
@@ -48,13 +49,11 @@ export default {
     const timestampHighlightsData = ref<[number, number][]>([])
     const transcriptLoading = ref(false);
     const currentVideoSeekTime = ref<number>(0)
+    const clickedTranscriptTime = ref<number>(0)
 
     // Method to update the transcript when it is obtained
     const updateTranscript = (newTranscript: never[], passedSessionID: string) => {
-      console.log("called in");
-      console.log(newTranscript);
       transcript.value = newTranscript;
-      console.log(transcript.value);
 
       showAnnotationTextboxes.value = true;
       sessionID.value = passedSessionID;
@@ -76,6 +75,10 @@ export default {
       currentVideoSeekTime.value = seekTime
     }
 
+    const handleTranscriptClick = (time: number) => {
+      clickedTranscriptTime.value = time
+    }
+
     return {
       transcript,
       updateTranscript,
@@ -86,7 +89,9 @@ export default {
       transcriptLoading,
       startLoadingTranscript,
       updateCurrentVideoSeekTime,
-      currentVideoSeekTime
+      currentVideoSeekTime,
+      handleTranscriptClick,
+      clickedTranscriptTime
     };
   },
 };
