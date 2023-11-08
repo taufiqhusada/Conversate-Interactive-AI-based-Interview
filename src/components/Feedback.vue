@@ -4,10 +4,10 @@
         <form>
             <div class="form-group row mb-3">
                 <div class="col">
-                    <input v-model="startTime" class="form-control" type="number" placeholder="Start Time">
+                    <input v-model="startTimeHHMMSS" class="form-control" type="text" placeholder="Start Time (hh:mm:ss)">
                 </div>
                 <div class="col">
-                    <input v-model="endTime" class="form-control" type="number" placeholder="End Time">
+                    <input v-model="endTimeHHMMSS" class="form-control" type="text" placeholder="End Time (hh:mm:ss)">
                 </div>
             </div>
             <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment">
@@ -88,8 +88,8 @@ export default defineComponent({
     },
     data() {
         return {
-            startTime: 0.0,
-            endTime: 0.0,
+            startTimeHHMMSS: '',
+            endTimeHHMMSS: '',
             annotation: '',
             question: '',
             feedback: '',
@@ -102,6 +102,17 @@ export default defineComponent({
         };
     },
     methods: {
+        // Function to convert HH:MM:SS format to seconds
+        convertHHMMSSToSeconds(timeString: string): number {
+            const [hours, minutes, seconds] = timeString.split(':').map(Number);
+            return hours * 3600 + minutes * 60 + seconds;
+        },
+        // Function to convert seconds to HH:MM:SS format
+        convertSecondsToHHMMSS(seconds: number): string {
+            const date = new Date(seconds * 1000);
+            return date.toISOString().substring(11, 19);
+        },
+
         async sendMessage() {
             if (this.question.trim() === '') {
                 return;
@@ -119,7 +130,7 @@ export default defineComponent({
 
             const requestBody = {
                 comment: this.annotation,
-                transcript: this.getTranscript(this.startTime, this.endTime),
+                transcript: this.getTranscript(this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)),
                 messages: this.mapChatMessagesToBackendFormat(this.chatMessages.slice(0, -1))
             };
 
@@ -176,8 +187,8 @@ export default defineComponent({
         async saveFormData() {
             // Construct the data to save to your API
             const dataToSave = {
-                secondStart: this.startTime,
-                secondEnd: this.endTime,
+                secondStart: this.convertHHMMSSToSeconds(this.startTimeHHMMSS),
+                secondEnd: this.convertHHMMSSToSeconds(this.endTimeHHMMSS),
                 annotation: this.annotation,
                 feedback: this.feedback,
                 transcript: this.concatenatedFilteredTranscript,
@@ -191,8 +202,8 @@ export default defineComponent({
 
                 if (response.status === 200) {
                     console.log('annotation saved successfully:', response.data);
-                    this.startTime = 0.0;
-                    this.endTime = 0.0;
+                    this.startTimeHHMMSS = "00:00:00";
+                    this.endTimeHHMMSS = "00:00:00";
                     this.annotation = '';
                     this.question = '';
                     this.feedback = '';
@@ -226,8 +237,8 @@ export default defineComponent({
                 // Update the form fields with the selected saved data
                 this.loadSavedData();
             } else {
-                this.startTime = 0.0;
-                this.endTime = 0.0;
+                this.startTimeHHMMSS = "00:00:00";
+                this.endTimeHHMMSS = "00:00:00";
                 this.annotation = '';
                 this.question = '';
                 this.feedback = '';
@@ -239,8 +250,8 @@ export default defineComponent({
         loadSavedData() {
             // Load the form fields with the data from the savedData array at the currentIndex
             const savedEntry = this.savedData[this.currentIndex];
-            this.startTime = savedEntry.secondStart;
-            this.endTime = savedEntry.secondEnd;
+            this.startTimeHHMMSS = this.convertSecondsToHHMMSS(savedEntry.secondStart);
+            this.endTimeHHMMSS = this.convertSecondsToHHMMSS(savedEntry.secondEnd);
             this.annotation = savedEntry.annotation;
             this.feedback = savedEntry.feedback;
             this.question = savedEntry.question;
@@ -256,9 +267,18 @@ export default defineComponent({
             }
         },
 
+        isValidTimeFormat(time: string): boolean {
+            const timeRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/;
+            return timeRegex.test(time);
+        },
+
         async highlightTranscript() {
-            // Emit the updated startTime and endTime to the parent component
-            this.$emit('highlight-transcript', [this.startTime, this.endTime]);
+            if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)){
+                 // Emit the updated startTime and endTime to the parent component
+                console.log(this.startTimeHHMMSS, this.endTimeHHMMSS);
+                console.log('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+                this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+            }
         },
     },
 
@@ -279,11 +299,11 @@ export default defineComponent({
                 }
             }
         },
-        startTime(newValue) {
+        startTimeHHMMSS(newValue) {
             // When startTime changes, emit the changes to the parent component
             this.highlightTranscript();
         },
-        endTime(newValue) {
+        endTimeHHMMSS(newValue) {
             // When endTime changes, emit the changes to the parent component
             this.highlightTranscript();
         },
