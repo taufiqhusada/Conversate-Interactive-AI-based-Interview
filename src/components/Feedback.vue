@@ -78,7 +78,7 @@ export default defineComponent({
             required: true,
         },
         transcript: {
-            type: Array as () => Array<{ text: string, timeOffset: number, duration: number }>,
+            type: Array as () => Array<{ text: string, timeOffset: number, duration: number, speaker: string }>,
             required: true,
         },
         sessionID: {
@@ -179,7 +179,7 @@ export default defineComponent({
                 return entry.timeOffset >= startTime && entry.timeOffset <= endTime;
             });
 
-            this.concatenatedFilteredTranscript = filteredTranscript.map(entry => entry.text).join('\n')
+            this.concatenatedFilteredTranscript = filteredTranscript.map(entry => entry.speaker + ":" + entry.text).join('\n')
 
             return this.concatenatedFilteredTranscript
         },
