@@ -16,7 +16,7 @@ export default class SymblService {
         console.log(videoUrl);
 
         // submit video
-        const submissionResponse = await axios.post('https://api.symbl.ai/v1/process/video/url', {
+        const submissionResponse = await axios.post('https://api.symbl.ai/v1/process/video/url?enableSpeakerDiarization=true&diarizationSpeakerCount=2', {
             url: videoUrl
         }, {
             headers: {
