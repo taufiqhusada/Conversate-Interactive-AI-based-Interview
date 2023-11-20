@@ -46,10 +46,55 @@ export default defineComponent({
     const fileProgress = ref<HTMLProgressElement | null>(null);
     const prevVideoSeekTime = ref<number>(0);
 
+    const uploadTranscript = async (transcript: any[], sessionID: string) => {
+      const transcriptFileName = `${sessionID}.json`;
+
+      const storageRef = firebase.storage().ref(`transcripts/${transcriptFileName}`);
+      const transcriptBlob = new Blob([JSON.stringify(transcript)], { type: 'application/json' });
+
+      try {
+        await storageRef.put(transcriptBlob);
+        console.log('Transcript uploaded successfully');
+      } catch (error) {
+        console.error('Error uploading transcript:', error);
+      }
+    };
+
+    const getTranscript = async (sessionID: string) => {
+      const transcriptFileName = `${sessionID}.json`;
+
+      const storageRef = firebase.storage().ref(`transcripts/${transcriptFileName}`);
+
+      try {
+        const downloadURL = await storageRef.getDownloadURL();
+        const response = await fetch(downloadURL);
+        const transcript = await response.json();
+
+        console.log('Transcript retrieved successfully:', transcript);
+
+        // Do something with the transcript data, e.g., pass it to a component or perform further processing.
+        return transcript;
+      } catch (error) {
+        console.error('Error retrieving transcript:', error);
+      }
+    };
+
     const uploadFile = async (event: Event) => {
       const file = (event.target as HTMLInputElement).files?.[0];
       if (file) {
-        const storageRef = firebase.storage().ref(`videos/${file.name}`);
+        const env = import.meta.env.VITE_ENV
+        if (env == 'dev') {  // handle case in dev env, just use sample video
+          let devSessionID = import.meta.env.VITE_DEV_SAMPLE_SESSION_ID
+          let transcript = await getTranscript(devSessionID);
+          videoUrl.value = import.meta.env.VITE_DEV_SAMPLE_VIDEO_URL
+
+          context.emit('transcript-updated', transcript, devSessionID);
+          return
+        }
+
+        const fileName = `${file.name}_${Date.now()}`;
+
+        const storageRef = firebase.storage().ref(`videos/${fileName}`);
         const uploadTask = storageRef.put(file);
 
         uploadTask.on(
@@ -77,6 +122,7 @@ export default defineComponent({
               symblService.transcribeVideo(videoUrl.value || '', appId, appSecret)
                 .then(([transcript, sessionID]) => {
                   context.emit('transcript-updated', transcript, sessionID);
+                  uploadTranscript(transcript, sessionID);
                 })
                 .catch((error) => {
                   console.error('Error transcribing video:', error);
@@ -84,6 +130,7 @@ export default defineComponent({
             });
           }
         );
+
       }
     };
 
