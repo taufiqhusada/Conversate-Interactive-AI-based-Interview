@@ -32,7 +32,8 @@
             </div>
             <div class="input">
                 <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage" />
-                <i class="fas fa-microphone"></i>
+                <i class="fas fa-microphone" @click="toggleRecording"
+                    :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
@@ -92,7 +93,7 @@ export default defineComponent({
             startTimeHHMMSS: '',
             endTimeHHMMSS: '',
             annotation: '',
-            question: '',
+            question: ref<string>(''),
             feedback: '',
             concatenatedFilteredTranscript: '',
             savedData: [] as SavedData[], // Array to store saved data
@@ -100,6 +101,8 @@ export default defineComponent({
             showChatbox: false,
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: import.meta.env.VITE_BACKEND_URL,
+            isRecording: ref<boolean>(false),
+            recognition: null as SpeechRecognition | null, 
         };
     },
     methods: {
@@ -197,8 +200,8 @@ export default defineComponent({
             } as SavedData;
 
             try {
-              
-                if (this.currentIndex >=0 && this.currentIndex < this.savedData.length) { // update data
+
+                if (this.currentIndex >= 0 && this.currentIndex < this.savedData.length) { // update data
                     // Make a PUT request to your update API
 
                     const currentId = this.savedData[this.currentIndex].id
@@ -228,7 +231,7 @@ export default defineComponent({
 
                     if (response.status === 200) {
                         console.log('annotation saved successfully:');
-                        
+
                         this.startTimeHHMMSS = "";
                         this.endTimeHHMMSS = "";
                         this.annotation = '';
@@ -245,7 +248,7 @@ export default defineComponent({
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
-                }   
+                }
             } catch (error) {
                 console.error('Error while saving data:', error);
             }
@@ -302,9 +305,44 @@ export default defineComponent({
         },
 
         async highlightTranscript() {
-            if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)){
-                 // Emit the updated startTime and endTime to the parent component
+            if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)) {
+                // Emit the updated startTime and endTime to the parent component
                 this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+            }
+        },
+
+        toggleRecording() {
+            if (this.isRecording) {
+                // Stop recording
+                this.recognition.stop();
+                this.recognition.onresult = null; // Remove the onresult event handler
+                this.isRecording = false;
+            } else {
+                // Start recording
+                this.recognition =  new (window as any).webkitSpeechRecognition();
+                this.recognition.lang = 'en-US';
+
+                this.recognition.continuous = true
+                this.recognition.interimResults = true
+
+                // Event handler when speech is recognized
+                this.recognition.onresult = (evt: SpeechRecognitionEvent) => {
+                    const t = Array.from(evt.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('')
+                 
+                    this.question = t;
+                };
+
+                // // Event handler when speech recognition is stopped
+                // this.recognition.onend = () => {
+                //     this.isRecording = false;
+                // };
+
+                // Start recognition
+                this.recognition.start();
+                this.isRecording = true;
             }
         },
     },
@@ -472,4 +510,24 @@ input::placeholder {
 .show-chatbox .chat {
     opacity: 0;
 }
-</style>
+
+.recording {
+    color: red;
+    /* Change the color to red when recording */
+    animation: pulse 1s infinite;
+    /* Add a pulsating animation */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}</style>
