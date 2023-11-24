@@ -458,7 +458,7 @@ export default defineComponent({
                 }
             } else {
                 // Start recording
-                this.recognition =  new SpeechRecognition();
+                this.recognition =  new webkitSpeechRecognition;
                 this.recognition.lang = 'en-US';
 
                 this.recognition.continuous = true
