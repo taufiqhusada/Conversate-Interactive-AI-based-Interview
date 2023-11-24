@@ -38,9 +38,9 @@
 
 
         <button @click="saveFormData" class="btn btn-primary mt-3 m-1">Save</button>
-        <button @click="navigateBack" class="btn btn-secondary mt-3 m-1" :disabled="currentIndex === 0">Back</button>
+        <button @click="navigateBack" class="btn btn-secondary mt-3 m-1" :disabled="currentIndex === -1">Back</button>
         <button @click="navigateNext" class="btn btn-secondary mt-3 m-1"
-            :disabled="currentIndex === savedData.length">Next</button>
+            :disabled="savedData.length === 0 || currentIndex === savedData.length">Next</button>
     </div>
 </template>
   
@@ -57,6 +57,7 @@ type SavedData = {
     feedback: string;
     transcript: string;
     chatMessages: ChatMessage[];
+    id: string;
 };
 
 interface ChatMessage {
@@ -78,7 +79,7 @@ export default defineComponent({
             required: true,
         },
         transcript: {
-            type: Array as () => Array<{ text: string, timeOffset: number, duration: number }>,
+            type: Array as () => Array<{ text: string, timeOffset: number, duration: number, speaker: string }>,
             required: true,
         },
         sessionID: {
@@ -136,7 +137,6 @@ export default defineComponent({
 
             this.question = '';
 
-            console.log(requestBody);
 
             try {
                 // Make a POST request to your API
@@ -179,7 +179,7 @@ export default defineComponent({
                 return entry.timeOffset >= startTime && entry.timeOffset <= endTime;
             });
 
-            this.concatenatedFilteredTranscript = filteredTranscript.map(entry => entry.text).join('\n')
+            this.concatenatedFilteredTranscript = filteredTranscript.map(entry => entry.speaker + ":" + entry.text).join('\n')
 
             return this.concatenatedFilteredTranscript
         },
@@ -197,33 +197,62 @@ export default defineComponent({
             } as SavedData;
 
             try {
-                // Make a POST request to your save API
-                const response = await axios.post(`${this.backendURL}/interviews/${this.sessionID}/annotations`, dataToSave);
+              
+                if (this.currentIndex >=0 && this.currentIndex < this.savedData.length) { // update data
+                    // Make a PUT request to your update API
 
-                if (response.status === 200) {
-                    console.log('annotation saved successfully:', response.data);
-                    this.startTimeHHMMSS = "00:00:00";
-                    this.endTimeHHMMSS = "00:00:00";
-                    this.annotation = '';
-                    this.question = '';
-                    this.feedback = '';
-                    this.chatMessages = [] as ChatMessage[]
+                    const currentId = this.savedData[this.currentIndex].id
+                    dataToSave.id = currentId;
 
-                    // Push the saved data to the savedData array
-                    this.savedData.push(dataToSave);
+                    this.savedData[this.currentIndex] = dataToSave;
+                    const response = await axios.put(`${this.backendURL}/interviews/${this.sessionID}/annotations/${currentId}`, dataToSave);
 
-                    // Update the currentIndex to the last saved entry
-                    this.currentIndex = this.savedData.length;
+                    if (response.status === 200) {
+                        console.log('annotation updated successfully:');
+
+                        this.startTimeHHMMSS = "";
+                        this.endTimeHHMMSS = "";
+                        this.annotation = '';
+                        this.question = '';
+                        this.feedback = '';
+                        this.chatMessages = [] as ChatMessage[]
+
+                        // Update the currentIndex to the last saved entry
+                        this.currentIndex = this.savedData.length;
+                    } else {
+                        console.error('Failed to save data:', response.status, response.data);
+                    }
                 } else {
-                    console.error('Failed to save data:', response.status, response.data);
-                }
+                    // Make a POST request to your save API
+                    const response = await axios.post(`${this.backendURL}/interviews/${this.sessionID}/annotations`, dataToSave);
+
+                    if (response.status === 200) {
+                        console.log('annotation saved successfully:');
+                        
+                        this.startTimeHHMMSS = "";
+                        this.endTimeHHMMSS = "";
+                        this.annotation = '';
+                        this.question = '';
+                        this.feedback = '';
+                        this.chatMessages = [] as ChatMessage[]
+
+                        // Push the saved data to the savedData array
+                        dataToSave.id = response.data['data']['id']
+                        this.savedData.push(dataToSave);
+
+                        // Update the currentIndex to the last saved entry
+                        this.currentIndex = this.savedData.length;
+                    } else {
+                        console.error('Failed to save data:', response.status, response.data);
+                    }
+                }   
             } catch (error) {
                 console.error('Error while saving data:', error);
             }
         },
 
         navigateBack() {
-            if (this.currentIndex > 0) {
+            if (this.currentIndex > -1) {
                 // Decrement the currentIndex to go back to the previous entry
                 this.currentIndex--;
                 // Update the form fields with the selected saved data
@@ -237,8 +266,8 @@ export default defineComponent({
                 // Update the form fields with the selected saved data
                 this.loadSavedData();
             } else {
-                this.startTimeHHMMSS = "00:00:00";
-                this.endTimeHHMMSS = "00:00:00";
+                this.startTimeHHMMSS = "";
+                this.endTimeHHMMSS = "";
                 this.annotation = '';
                 this.question = '';
                 this.feedback = '';
@@ -275,30 +304,12 @@ export default defineComponent({
         async highlightTranscript() {
             if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)){
                  // Emit the updated startTime and endTime to the parent component
-                console.log(this.startTimeHHMMSS, this.endTimeHHMMSS);
-                console.log('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
                 this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
             }
         },
     },
 
     watch: {
-        async showAnnotationTextboxes(newValue) {
-            if (newValue === true) {
-                try {
-                    const response = await axios.get(`${this.backendURL}/interviews/${this.sessionID}/annotations`);
-
-                    if (response.status === 200) {
-                        this.savedData = response.data.data.annotations; // Assuming the API returns an array of saved data
-                        this.currentIndex = this.savedData.length - 1;
-                    } else {
-                        console.error('Failed to fetch saved data:', response.status, response.data);
-                    }
-                } catch (error) {
-                    console.error('Error while fetching saved data:', error);
-                }
-            }
-        },
         startTimeHHMMSS(newValue) {
             // When startTime changes, emit the changes to the parent component
             this.highlightTranscript();

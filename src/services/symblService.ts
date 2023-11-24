@@ -16,7 +16,7 @@ export default class SymblService {
         console.log(videoUrl);
 
         // submit video
-        const submissionResponse = await axios.post('https://api.symbl.ai/v1/process/video/url', {
+        const submissionResponse = await axios.post('https://api.symbl.ai/v1/process/video/url?enableSpeakerDiarization=true&diarizationSpeakerCount=2', {
             url: videoUrl
         }, {
             headers: {
@@ -55,12 +55,13 @@ export default class SymblService {
     
         const transcript:never[] = transcriptResponse.data.messages
 
-        const formattedTranscript: Array<{ text: string, timeOffset: number, duration: number }> = transcript.map(item => {
+        const formattedTranscript: Array<{ text: string, timeOffset: number, duration: number, speaker: string }> = transcript.map(item => {
             // You can provide values for the properties as needed
             return {
               text: item["text"],
               timeOffset: item["timeOffset"],
               duration: item["duration"],
+              speaker: item["from"]["name"]
             };
           });
 

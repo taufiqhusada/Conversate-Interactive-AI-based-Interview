@@ -3,8 +3,12 @@
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
-        <b>{{ convertTimeToHHMMSS(message.timeOffset) }}:</b>
-        {{ message.text }}
+        <div class="message-container">
+          <div class="content">
+            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1', 'speaker-2': message.speaker === 'Speaker 2' }"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+          </div>
+          <div class="time"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
+        </div>
       </div>
     </section>
   </div>
@@ -18,6 +22,7 @@ interface TranscriptMessage {
   text: string;
   timeOffset: number;
   duration: number;
+  speaker: string;
 }
 
 export default defineComponent({
@@ -210,6 +215,31 @@ export default defineComponent({
   --tw-text-opacity: 1;
   background: rgb(250, 200, 200);
   /* Highlight color */
-  /* Add other styles for highlighting */
+  /* Add other
+   styles for highlighting */
+}
+
+
+.message-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.time {
+  text-align: right;
+  margin-right: 10px; /* Adjust margin as needed */
+}
+
+.content {
+  flex-grow: 1;
+}
+
+.speaker-1 {
+  color: #368a02; /* Text color for Speaker 1 */
+}
+
+.speaker-2 {
+  color: #0d6efd; /* Text color for Speaker 2 */
 }
 </style>
