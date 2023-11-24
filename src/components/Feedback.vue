@@ -49,6 +49,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
+import { SpeechRecognition} from "dom-speech-recognition"
 
 type SavedData = {
     secondStart: number;
@@ -314,9 +315,11 @@ export default defineComponent({
         toggleRecording() {
             if (this.isRecording) {
                 // Stop recording
-                this.recognition.stop();
-                this.recognition.onresult = null; // Remove the onresult event handler
-                this.isRecording = false;
+                if (this.recognition){
+                    this.recognition.stop();
+                    this.recognition.onresult = null; // Remove the onresult event handler
+                    this.isRecording = false;
+                }
             } else {
                 // Start recording
                 this.recognition =  new (window as any).webkitSpeechRecognition();

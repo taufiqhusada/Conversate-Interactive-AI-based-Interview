@@ -9,6 +9,11 @@
     }
   ],
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "types/*": [
+        "./@types/*"
+      ]
+    }
   },
 }

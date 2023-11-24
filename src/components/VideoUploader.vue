@@ -22,7 +22,7 @@
       </form>
     </template>
 
-    <video v-else controls width="640" height="360" ref="videoPlayerRef" @timeupdate="updateSeekTime">
+    <video v-else controls class="videoPlayer" ref="videoPlayerRef" @timeupdate="updateSeekTime">
       <source :src="videoUrl" type="video/mp4" />
     </video>
   </div>
@@ -369,5 +369,11 @@ export default defineComponent({
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.videoPlayer {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
 }
 </style>

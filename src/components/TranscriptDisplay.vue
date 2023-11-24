@@ -171,7 +171,7 @@ export default defineComponent({
   height: 33vh;
   padding: 1em;
   overflow: auto;
-  width: 40rem;
+  max-width: 40rem;
   margin: 0 auto 2em auto;
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -184,7 +184,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  width: 40rem;
+  max-width: 40rem;
   z-index: 2;
   box-sizing: border-box;
   border-radius: 1rem;
