@@ -32,7 +32,8 @@
             </div>
             <div class="input">
                 <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage" />
-                <i class="fas fa-microphone"></i>
+                <i class="fas fa-microphone" @click="toggleRecording"
+                    :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
@@ -48,6 +49,143 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
+
+
+// https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition#events
+interface SpeechRecognitionEventMap {
+    audioend: Event;
+    audiostart: Event;
+    end: Event;
+    error: SpeechRecognitionErrorEvent;
+    nomatch: SpeechRecognitionEvent;
+    result: SpeechRecognitionEvent;
+    soundend: Event;
+    soundstart: Event;
+    speechend: Event;
+    speechstart: Event;
+    start: Event;
+}
+
+// https://wicg.github.io/speech-api/#speechreco-section
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    grammars: SpeechGrammarList;
+    interimResults: boolean;
+    lang: string;
+    maxAlternatives: number;
+    onaudioend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onaudiostart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onerror: ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => any) | null;
+    onnomatch: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+    onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+    onsoundend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onsoundstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onspeechend: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onspeechstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    onstart: ((this: SpeechRecognition, ev: Event) => any) | null;
+    abort(): void;
+    start(): void;
+    stop(): void;
+    addEventListener<K extends keyof SpeechRecognitionEventMap>(
+        type: K,
+        listener: (this: SpeechRecognition, ev: SpeechRecognitionEventMap[K]) => any,
+        options?: boolean | AddEventListenerOptions,
+    ): void;
+    addEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+    ): void;
+    removeEventListener<K extends keyof SpeechRecognitionEventMap>(
+        type: K,
+        listener: (this: SpeechRecognition, ev: SpeechRecognitionEventMap[K]) => any,
+        options?: boolean | EventListenerOptions,
+    ): void;
+    removeEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions,
+    ): void;
+}
+
+declare var SpeechRecognition: { prototype: SpeechRecognition; new(): SpeechRecognition };
+
+// https://wicg.github.io/speech-api/#speechrecognitionevent
+interface SpeechRecognitionEventInit extends EventInit {
+    resultIndex?: number;
+    results: SpeechRecognitionResultList;
+}
+
+// https://wicg.github.io/speech-api/#dictdef-speechrecognitioneventinit
+interface SpeechRecognitionEvent extends Event {
+    readonly resultIndex: number;
+    readonly results: SpeechRecognitionResultList;
+}
+
+declare var SpeechRecognitionEvent: {
+    prototype: SpeechRecognitionEvent;
+    new(type: string, eventInitDict: SpeechRecognitionEventInit): SpeechRecognitionEvent;
+};
+
+// https://wicg.github.io/speech-api/#enumdef-speechrecognitionerrorcode
+type SpeechRecognitionErrorCode =
+    | "aborted"
+    | "audio-capture"
+    | "bad-grammar"
+    | "language-not-supported"
+    | "network"
+    | "no-speech"
+    | "not-allowed"
+    | "service-not-allowed";
+
+// https://wicg.github.io/speech-api/#dictdef-speechrecognitionerroreventinit
+interface SpeechRecognitionErrorEventInit extends EventInit {
+    error: SpeechRecognitionErrorCode;
+    message?: string;
+}
+
+// https://wicg.github.io/speech-api/#speechrecognitionerrorevent
+interface SpeechRecognitionErrorEvent extends Event {
+    readonly error: SpeechRecognitionErrorCode;
+    readonly message: string;
+}
+
+declare var SpeechRecognitionErrorEvent: {
+    prototype: SpeechRecognitionErrorEvent;
+    new(type: string, eventInitDict: SpeechRecognitionErrorEventInit): SpeechRecognitionErrorEvent;
+};
+
+// https://wicg.github.io/speech-api/#speechgrammar
+interface SpeechGrammar {
+    src: string;
+    weight: number;
+}
+
+declare var SpeechGrammar: {
+    prototype: SpeechGrammar;
+    new(): SpeechGrammar;
+};
+
+// https://wicg.github.io/speech-api/#speechgrammarlist
+interface SpeechGrammarList {
+    readonly length: number;
+    addFromString(string: string, weight?: number): void;
+    addFromURI(src: string, weight?: number): void;
+    item(index: number): SpeechGrammar;
+    [index: number]: SpeechGrammar;
+}
+
+declare var SpeechGrammarList: { prototype: SpeechGrammarList; new(): SpeechGrammarList };
+
+// prefixed global variables in Chrome; should match the equivalents above
+// https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API/Using_the_Web_Speech_API#chrome_support
+declare var webkitSpeechRecognition: { prototype: SpeechRecognition; new(): SpeechRecognition };
+declare var webkitSpeechGrammarList: { prototype: SpeechGrammarList; new(): SpeechGrammarList };
+declare var webkitSpeechRecognitionEvent: {
+    prototype: SpeechRecognitionEvent;
+    new(type: string, eventInitDict: SpeechRecognitionEventInit): SpeechRecognitionEvent;
+};
 
 type SavedData = {
     secondStart: number;
@@ -92,7 +230,7 @@ export default defineComponent({
             startTimeHHMMSS: '',
             endTimeHHMMSS: '',
             annotation: '',
-            question: '',
+            question: ref<string>(''),
             feedback: '',
             concatenatedFilteredTranscript: '',
             savedData: [] as SavedData[], // Array to store saved data
@@ -100,6 +238,8 @@ export default defineComponent({
             showChatbox: false,
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: import.meta.env.VITE_BACKEND_URL,
+            isRecording: ref<boolean>(false),
+            recognition: null as SpeechRecognition | null, 
         };
     },
     methods: {
@@ -197,8 +337,8 @@ export default defineComponent({
             } as SavedData;
 
             try {
-              
-                if (this.currentIndex >=0 && this.currentIndex < this.savedData.length) { // update data
+
+                if (this.currentIndex >= 0 && this.currentIndex < this.savedData.length) { // update data
                     // Make a PUT request to your update API
 
                     const currentId = this.savedData[this.currentIndex].id
@@ -228,7 +368,7 @@ export default defineComponent({
 
                     if (response.status === 200) {
                         console.log('annotation saved successfully:');
-                        
+
                         this.startTimeHHMMSS = "";
                         this.endTimeHHMMSS = "";
                         this.annotation = '';
@@ -245,7 +385,7 @@ export default defineComponent({
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
-                }   
+                }
             } catch (error) {
                 console.error('Error while saving data:', error);
             }
@@ -302,9 +442,46 @@ export default defineComponent({
         },
 
         async highlightTranscript() {
-            if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)){
-                 // Emit the updated startTime and endTime to the parent component
+            if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)) {
+                // Emit the updated startTime and endTime to the parent component
                 this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+            }
+        },
+
+        toggleRecording() {
+            if (this.isRecording) {
+                // Stop recording
+                if (this.recognition){
+                    this.recognition.stop();
+                    this.recognition.onresult = null; // Remove the onresult event handler
+                    this.isRecording = false;
+                }
+            } else {
+                // Start recording
+                this.recognition =  new webkitSpeechRecognition;
+                this.recognition.lang = 'en-US';
+
+                this.recognition.continuous = true
+                this.recognition.interimResults = true
+
+                // Event handler when speech is recognized
+                this.recognition.onresult = (evt: SpeechRecognitionEvent) => {
+                    const t = Array.from(evt.results)
+                        .map(result => result[0])
+                        .map(result => result.transcript)
+                        .join('')
+                 
+                    this.question = t;
+                };
+
+                // // Event handler when speech recognition is stopped
+                // this.recognition.onend = () => {
+                //     this.isRecording = false;
+                // };
+
+                // Start recognition
+                this.recognition.start();
+                this.isRecording = true;
             }
         },
     },
@@ -343,7 +520,7 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 40rem;
+    max-width: 100%;
     height: 30rem;
     z-index: 2;
     box-sizing: border-box;
@@ -472,4 +649,24 @@ input::placeholder {
 .show-chatbox .chat {
     opacity: 0;
 }
-</style>
+
+.recording {
+    color: red;
+    /* Change the color to red when recording */
+    animation: pulse 1s infinite;
+    /* Add a pulsating animation */
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}</style>
