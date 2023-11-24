@@ -520,7 +520,7 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    width: 40rem;
+    max-width: 100%;
     height: 30rem;
     z-index: 2;
     box-sizing: border-box;
