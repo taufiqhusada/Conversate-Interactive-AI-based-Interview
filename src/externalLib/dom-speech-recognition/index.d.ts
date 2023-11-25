@@ -1,7 +1,7 @@
 
 
 
-export { SpeechRecognition, SpeechRecognitionEvent };
+export  { SpeechRecognition, SpeechRecognitionEvent};
 
 // https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition#events
 interface SpeechRecognitionEventMap {
