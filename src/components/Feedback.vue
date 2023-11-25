@@ -26,14 +26,25 @@
                             <div class="dot dot-2"></div>
                             <div class="dot dot-3"></div>
                         </div>
-                        <div v-else>{{ message.content }}</div>
+                        <div v-else v-html="message.content"></div>
+
+                        <div v-if="message.hasDropdown">
+                            <div class="dropdown m-2" @click="toggleDropdown">
+                                <button class="btn btn-light">Dropdown button</button>
+                                <div class="dropdown-menu" v-show="isDropdownOpen">
+                                    <a class="dropdown-item" @click="selectDropdownItem('How to improve this part?')">How to improve this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('How is my performance on this part?')">How is my performance on this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('What is good about this part?')">What is good about this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('What can be improved in this part?')">What can be improved in this part?</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="input">
                 <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage" />
-                <i class="fas fa-microphone" @click="toggleRecording"
-                    :class="{ 'recording': isRecording }">&#xf130;</i>
+                <i class="fas fa-microphone" @click="toggleRecording" :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
@@ -64,7 +75,8 @@ type SavedData = {
 interface ChatMessage {
     content: string;
     role: 'user' | 'assistant';
-    isTyping: boolean;
+    isTyping?: boolean;
+    hasDropdown?: boolean;
 }
 
 interface ChatMessageBackend {
@@ -102,7 +114,8 @@ export default defineComponent({
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: import.meta.env.VITE_BACKEND_URL,
             isRecording: ref<boolean>(false),
-            recognition: null as SpeechRecognition | null, 
+            recognition: null as SpeechRecognition | null,
+            isDropdownOpen: ref(false),
         };
     },
     methods: {
@@ -149,7 +162,7 @@ export default defineComponent({
                     // Update the feedback field with the response from GPT-4
                     this.scrollToBottom();
                     const repliedMessage = response.data.data;
-                    this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false });
+                    this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false});
                     if (this.chatMessages.length == 2) {
                         this.chatMessages.push({ content: "Do you want to try saying this part again in a better way? I can give you feedback again based on that", role: 'assistant', isTyping: false });
                     }
@@ -171,11 +184,36 @@ export default defineComponent({
             return chatMessagesWithoutTyping;
         },
 
+        
         async askGPT() {
             this.showChatbox = true;
 
+            // Send initial message with a dropdown when chatbox is shown
+            this.chatMessages.push({
+                content: "Hi, what can I help you with?",
+                role: 'assistant',
+                isTyping: false,
+            });
+            this.chatMessages.push({
+                content: `Try asking these questions`,
+                role: 'assistant',
+                isTyping: false,
+                hasDropdown: true,
+            });
         },
 
+        toggleDropdown() {
+            this.isDropdownOpen = !this.isDropdownOpen;
+        },
+
+        selectDropdownItem(selectedValue: string) {
+            // Handle the selected value and send a message
+            this.chatMessages.pop();
+
+            this.question = selectedValue;
+
+            this.sendMessage();
+        },
 
         getTranscript(startTime: number, endTime: number): string {
             const filteredTranscript = this.transcript.filter(entry => {
@@ -314,14 +352,14 @@ export default defineComponent({
         toggleRecording() {
             if (this.isRecording) {
                 // Stop recording
-                if (this.recognition){
+                if (this.recognition) {
                     this.recognition.stop();
                     this.recognition.onresult = null; // Remove the onresult event handler
                     this.isRecording = false;
                 }
             } else {
                 // Start recording
-                this.recognition =  new webkitSpeechRecognition;
+                this.recognition = new webkitSpeechRecognition;
                 this.recognition.lang = 'en-US';
 
                 this.recognition.continuous = true
@@ -333,7 +371,7 @@ export default defineComponent({
                         .map(result => result[0])
                         .map(result => result.transcript)
                         .join('')
-                 
+
                     this.question = t;
                 };
 
@@ -365,7 +403,6 @@ export default defineComponent({
 <style scoped>
 .contact {
     position: relative;
-    /* margin-bottom: 1rem; */
     padding-left: 2rem;
     height: 4.5rem;
     display: flex;
@@ -396,8 +433,9 @@ export default defineComponent({
     /* padding: 6rem; */
     background: #F7F7F7;
     /* You can update the background color as needed */
-    flex-shrink: 2;
+    flex-shrink: 10;  
     overflow-y: auto;
+    height: 30rem;
     box-shadow:
         inset 0 2rem 2rem -2rem rgba(0, 0, 0, 0.05),
         inset 0 -2rem 2rem -2rem rgba(0, 0, 0, 0.05);
@@ -532,4 +570,58 @@ input::placeholder {
     100% {
         transform: scale(1);
     }
-}</style>
+}
+
+/* Custom styles for the dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-button {
+    background-color: #6c757d;
+    color: #fff;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    min-width: 160px;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    text-decoration: none;
+    display: block;
+    color: #333;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+/* Apply the animation to the chatbox */
+.message {
+    animation: fadeIn 0.5s ease-in-out;
+}
+</style>
