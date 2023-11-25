@@ -49,9 +49,6 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
 import axios from 'axios';
-import {SpeechRecognition, SpeechRecognitionEvent} from '@/externalLib/dom-speech-recognition/index.d'
-
-declare var webkitSpeechRecognition: { prototype: SpeechRecognition; new(): SpeechRecognition };
 
 type SavedData = {
     secondStart: number;
