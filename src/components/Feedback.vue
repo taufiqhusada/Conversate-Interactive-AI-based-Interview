@@ -30,7 +30,7 @@
 
                         <div v-if="message.hasDropdown">
                             <div class="dropdown m-2" @click="toggleDropdown">
-                                <button class="btn btn-light">Dropdown button</button>
+                                <button class="btn btn-outline-dark">Select Suggestion</button>
                                 <div class="dropdown-menu" v-show="isDropdownOpen">
                                     <a class="dropdown-item" @click="selectDropdownItem('How to improve this part?')">How to improve this part?</a>
                                     <a class="dropdown-item" @click="selectDropdownItem('How is my performance on this part?')">How is my performance on this part?</a>
@@ -38,6 +38,8 @@
                                     <a class="dropdown-item" @click="selectDropdownItem('What can be improved in this part?')">What can be improved in this part?</a>
                                 </div>
                             </div>
+                            <br>
+                            <p>Or you can type in your question</p>
                         </div>
                     </div>
                 </div>
