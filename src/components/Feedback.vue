@@ -228,18 +228,16 @@ export default defineComponent({
         },
 
         async saveFormData() {
-            // Construct the data to save to your API
-            const dataToSave = {
-                secondStart: this.convertHHMMSSToSeconds(this.startTimeHHMMSS),
-                secondEnd: this.convertHHMMSSToSeconds(this.endTimeHHMMSS),
-                annotation: this.annotation,
-                feedback: this.feedback,
-                transcript: this.concatenatedFilteredTranscript,
-                question: this.question,
-                chatMessages: this.chatMessages,
-            } as SavedData;
-
             try {
+                const dataToSave = {
+                    secondStart: this.convertHHMMSSToSeconds(this.startTimeHHMMSS),
+                    secondEnd: this.convertHHMMSSToSeconds(this.endTimeHHMMSS),
+                    annotation: this.annotation,
+                    feedback: this.feedback,
+                    transcript: this.concatenatedFilteredTranscript,
+                    question: this.question,
+                    chatMessages: this.chatMessages,
+                } as SavedData;
 
                 if (this.currentIndex >= 0 && this.currentIndex < this.savedData.length) { // update data
                     // Make a PUT request to your update API
@@ -262,6 +260,7 @@ export default defineComponent({
 
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
+                        this.showChatbox = false;
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -300,6 +299,7 @@ export default defineComponent({
                 this.currentIndex--;
                 // Update the form fields with the selected saved data
                 this.loadSavedData();
+                this.showChatbox = true;
             }
         },
         navigateNext() {
@@ -309,6 +309,8 @@ export default defineComponent({
                 // Update the form fields with the selected saved data
                 this.loadSavedData();
             } else {
+                this.showChatbox = false;
+
                 this.startTimeHHMMSS = "";
                 this.endTimeHHMMSS = "";
                 this.annotation = '';
