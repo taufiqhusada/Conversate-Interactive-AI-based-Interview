@@ -26,7 +26,7 @@
                             <div class="dot dot-2"></div>
                             <div class="dot dot-3"></div>
                         </div>
-                        <div v-else>{{ message.content }}</div>
+                        <div v-else v-html="message.content"></div>
                     </div>
                 </div>
             </div>
