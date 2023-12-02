@@ -40,8 +40,10 @@
                                 <div class="dropdown-menu" v-show="isDropdownOpen">
                                     <a class="dropdown-item" @click="selectDropdownItem('How to improve this part?')">How to improve this part?</a>
                                     <a class="dropdown-item" @click="selectDropdownItem('How is my performance on this part?')">How is my performance on this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('Could you give me example how to answer this better?')">How is my performance on this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('Could you give me example how to answer this using STAR method?')">How is my performance on this part?</a>
                                     <a class="dropdown-item" @click="selectDropdownItem('What is good about this part?')">What is good about this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('What can be improved in this part?')">What can be improved in this part?</a>
+                                    <a class="dropdown-item" @click="selectDropdownItem('What is bad about this part?')">What is good about this part?</a>
                                 </div>
                             </div>
                             <br>
