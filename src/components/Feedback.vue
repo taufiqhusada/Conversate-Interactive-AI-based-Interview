@@ -34,16 +34,11 @@
                         </div>
                         <div v-else v-html="message.content"></div>
 
-                        <div v-if="message.hasDropdown">
+                        <div v-if="message.dropdownItems">
                             <div class="dropdown m-2" @click="toggleDropdown">
                                 <button class="btn btn-outline-dark">Select Suggestion</button>
                                 <div class="dropdown-menu" v-show="isDropdownOpen">
-                                    <a class="dropdown-item" @click="selectDropdownItem('How to improve this part?')">How to improve this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('How is my performance on this part?')">How is my performance on this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('Could you give me example how to answer this better?')">How is my performance on this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('Could you give me example how to answer this using STAR method?')">How is my performance on this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('What is good about this part?')">What is good about this part?</a>
-                                    <a class="dropdown-item" @click="selectDropdownItem('What is bad about this part?')">What is good about this part?</a>
+                                    <a v-for="(item, index) in message.dropdownItems" :key="index" class="dropdown-item" @click="selectDropdownItem(item)">{{ item }}</a>
                                 </div>
                             </div>
                             <br>
@@ -86,7 +81,7 @@ interface ChatMessage {
     content: string;
     role: 'user' | 'assistant';
     isTyping?: boolean;
-    hasDropdown?: boolean;
+    dropdownItems?: string[];
 }
 
 interface ChatMessageBackend {
@@ -173,7 +168,7 @@ export default defineComponent({
                     this.scrollToBottom();
                     const repliedMessage = response.data.data;
                     this.chatMessages.push({ content: repliedMessage, role: 'assistant', isTyping: false});
-                    if (this.chatMessages.length == 2) {
+                    if (this.chatMessages.length == 4) {
                         this.chatMessages.push({ content: "Do you want to try saying this part again in a better way? I can give you feedback again based on that", role: 'assistant', isTyping: false });
                     }
                 } else {
@@ -190,7 +185,7 @@ export default defineComponent({
         },
 
         mapChatMessagesToBackendFormat(chatMessages: ChatMessage[]) {
-            const chatMessagesWithoutTyping = chatMessages.map(({ isTyping, ...rest }) => rest);
+            const chatMessagesWithoutTyping = chatMessages.map(({ isTyping,  dropdownItems, ...rest }) => rest);
             return chatMessagesWithoutTyping;
         },
 
@@ -208,7 +203,13 @@ export default defineComponent({
                 content: `Try asking these questions`,
                 role: 'assistant',
                 isTyping: false,
-                hasDropdown: true,
+                dropdownItems: [
+                    'How to improve this part?',
+                    'How is my performance on this part?',
+                    'Could you give me example how to answer this better?',
+                    'Could you give me example how to answer this using STAR method?',
+                    'What is good about this part?',
+                ] as string[]
             });
         },
 
@@ -217,9 +218,6 @@ export default defineComponent({
         },
 
         selectDropdownItem(selectedValue: string) {
-            // Handle the selected value and send a message
-            this.chatMessages.pop();
-
             this.question = selectedValue;
 
             this.sendMessage();
