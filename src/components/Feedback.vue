@@ -10,7 +10,13 @@
                     <input v-model="endTimeHHMMSS" class="form-control" type="text" placeholder="End Time (hh:mm:ss)">
                 </div>
             </div>
-            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment">
+            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
+            <datalist id="commentOptions">
+                <option value="I am good at answering the interview question"></option>
+                <option value="I am bad at answering the interview question"></option>
+                <option value="There is some good and bad part when I answer this interview question"></option>
+                <option value="I am not sure about my performance in this part"></option>
+            </datalist>
             <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Ask
                 Feedback</button>
         </form>
@@ -112,7 +118,7 @@ export default defineComponent({
             concatenatedFilteredTranscript: '',
             savedData: [] as SavedData[], // Array to store saved data
             currentIndex: -1,
-            showChatbox: false,
+            showChatbox: ref(false),
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
             backendURL: import.meta.env.VITE_BACKEND_URL,
             isRecording: ref<boolean>(false),
@@ -284,6 +290,7 @@ export default defineComponent({
 
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
+                        this.showChatbox = false;
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
