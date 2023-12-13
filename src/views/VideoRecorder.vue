@@ -1,9 +1,12 @@
 <template>
   <div>
-    <video ref="videoElement" autoplay></video>
-    <button @click="startRecording" :disabled="recording">Start Recording</button>
-    <button @click="stopRecording" :disabled="!recording">Stop Recording</button>
-    <a v-if="recordingFinished" :href="recordingUrl" download="recorded-video.webm">Download Recording</a>
+    <video ref="videoElement" autoplay muted></video>
+    <button @click="startVideo" :disabled="videoRecording">Start Video</button>
+    <button @click="stopVideo" :disabled="!videoRecording">Stop Video</button>
+    <button @click="startAudio" :disabled="audioRecording">Start Audio</button>
+    <button @click="stopAudio" :disabled="!audioRecording">Stop Audio</button>
+    <a v-if="videoRecordingFinished" :href="videoRecordingUrl" download="recorded-video.webm">Download Video</a>
+    <a v-if="audioRecordingFinished" :href="audioRecordingUrl" download="recorded-audio.webm">Download Audio</a>
   </div>
 </template>
 
@@ -14,11 +17,16 @@ export default {
   name: 'WebcamRecorder',
   data() {
     return {
-      recording: false,
-      recordingFinished: false,
-      recordingUrl: '',
-      mediaRecorder: null as MediaRecorder | null,
-      chunks: [] as Blob[],
+      videoRecording: false,
+      audioRecording: false,
+      videoRecordingFinished: false,
+      audioRecordingFinished: false,
+      videoRecordingUrl: '',
+      audioRecordingUrl: '',
+      videoMediaRecorder: null as MediaRecorder | null,
+      audioMediaRecorder: null as MediaRecorder | null,
+      audioChunks: [] as Blob[],
+      audioSegments: [] as Blob[],
     };
   },
   mounted() {
@@ -27,38 +35,64 @@ export default {
   methods: {
     async getMedia() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
         const videoElement = this.$refs.videoElement as HTMLVideoElement;
-        videoElement.srcObject = stream;
+        videoElement.srcObject = videoStream;
+        
+        this.videoMediaRecorder = new MediaRecorder(videoStream);
+        this.audioMediaRecorder = new MediaRecorder(audioStream);
+        
+        this.videoMediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.videoRecordingUrl = URL.createObjectURL(event.data);
+          }
+        };
+        
+        this.audioMediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.audioChunks.push(event.data);
+          }
+        };
+        
+        this.audioMediaRecorder.onstop = () => {
+          const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          this.audioSegments.push(audioBlob);
+          this.audioRecordingUrl = URL.createObjectURL(audioBlob);
+          this.audioRecordingFinished = true;
+        };
+        
       } catch (err) {
         console.error('Error accessing webcam:', err);
       }
     },
-    startRecording() {
-      const videoElement = this.$refs.videoElement as HTMLVideoElement;
-      const stream = videoElement.srcObject as MediaStream;
-      this.chunks = [];
-      this.recording = true;
-      this.mediaRecorder = new MediaRecorder(stream);
-      
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          this.chunks.push(event.data);
-        }
-      };
-      
-      this.mediaRecorder.onstop = () => {
-        const blob = new Blob(this.chunks, { type: 'video/webm' });
-        this.recordingUrl = URL.createObjectURL(blob);
-        this.recordingFinished = true;
-      };
-      
-      this.mediaRecorder.start();
+    startVideo() {
+      if (this.videoMediaRecorder){
+        this.videoRecordingFinished = false;
+        this.videoRecording = true;
+        this.videoMediaRecorder.start();
+      }
     },
-    stopRecording() {
-      if (this.mediaRecorder && this.recording) {
-        this.mediaRecorder.stop();
-        this.recording = false;
+    stopVideo() {
+      if (this.videoMediaRecorder && this.videoRecording) {
+        this.videoMediaRecorder.stop();
+        this.videoRecording = false;
+        this.videoRecordingFinished = true; 
+      }
+    },
+    startAudio() {
+      if (this.audioMediaRecorder){
+        this.audioChunks = [];
+        this.audioRecordingFinished = false;
+        this.audioRecording = true;
+        this.audioMediaRecorder.start();
+      }
+    },
+    stopAudio() {
+      if (this.audioMediaRecorder && this.audioRecording) {
+        this.audioMediaRecorder.stop();
+        this.audioRecording = false;
       }
     },
   },
