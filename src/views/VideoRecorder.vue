@@ -27,6 +27,7 @@ export default {
       audioMediaRecorder: null as MediaRecorder | null,
       audioChunks: [] as Blob[],
       audioSegments: [] as Blob[],
+      videoStartTime: null as Date | null, // Store video start time
     };
   },
   mounted() {
@@ -68,9 +69,10 @@ export default {
       }
     },
     startVideo() {
-      if (this.videoMediaRecorder){
+      if (this.videoMediaRecorder) {
         this.videoRecordingFinished = false;
         this.videoRecording = true;
+        this.videoStartTime = new Date(); // Store video start time
         this.videoMediaRecorder.start();
       }
     },
@@ -78,21 +80,34 @@ export default {
       if (this.videoMediaRecorder && this.videoRecording) {
         this.videoMediaRecorder.stop();
         this.videoRecording = false;
-        this.videoRecordingFinished = true; 
+        this.videoRecordingFinished = true;
       }
     },
     startAudio() {
-      if (this.audioMediaRecorder){
+      if (this.audioMediaRecorder) {
         this.audioChunks = [];
         this.audioRecordingFinished = false;
         this.audioRecording = true;
-        this.audioMediaRecorder.start();
+
+        // Calculate and print the elapsed time since starting video
+        if (this.videoStartTime) {
+          const currentTime = new Date();
+          const elapsedSeconds = (currentTime.getTime() - this.videoStartTime.getTime()) / 1000;
+          console.log('Elapsed time (seconds):', elapsedSeconds);
+        }
       }
     },
     stopAudio() {
       if (this.audioMediaRecorder && this.audioRecording) {
         this.audioMediaRecorder.stop();
         this.audioRecording = false;
+
+        // Calculate and print the elapsed time since starting video
+        if (this.videoStartTime) {
+          const currentTime = new Date();
+          const elapsedSeconds = (currentTime.getTime() - this.videoStartTime.getTime()) / 1000;
+          console.log('Elapsed time (seconds):', elapsedSeconds);
+        }
       }
     },
   },
