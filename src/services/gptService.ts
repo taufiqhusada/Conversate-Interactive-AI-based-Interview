@@ -75,7 +75,7 @@ export default class GPTService {
             // Generate and play TTS audio from the GPT response
             const audioBuffer = await this.generateTTS(assistantResponse);
 
-            return audioBuffer;
+            return [audioBuffer, assistantResponse];
         } catch (error) {
             console.error('Error generating GPT response:', error);
             return '';

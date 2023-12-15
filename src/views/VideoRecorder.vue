@@ -1,36 +1,71 @@
 <template>
-  <div>
-    <video ref="videoElement" autoplay muted></video>
-    <button @click="startVideo" :disabled="videoRecording">Start Video</button>
-    <button @click="stopVideo" :disabled="!videoRecording">Stop Video</button>
-    <button @click="startAudio" :disabled="audioRecording">Start Audio</button>
-    <button @click="stopAudio" :disabled="!audioRecording">Stop Audio</button>
-    <a v-if="videoRecordingFinished" :href="videoRecordingUrl" download="recorded-video.webm">Download Video</a>
-    <a v-if="audioRecordingFinished" :href="audioRecordingUrl" download="recorded-audio.webm">Download Audio</a>
+  <div class="container">
+    <template v-if="!videoRecordingUrl">
+      <video ref="videoElement" autoplay muted></video>
+      <button @click="startVideo" :disabled="videoRecording">Start Video</button>
+      <button @click="stopVideo" :disabled="!videoRecording">Stop Video</button>
+      <button @click="startAudio" :disabled="audioRecording">Start Audio</button>
+      <button @click="stopAudio" :disabled="!audioRecording">Stop Audio</button>
+    </template>
+    <template v-else>
+      <div class="row">
+        <div class="col-sm-6">
+          <div class="video-uploader-container">
+            <VideoPlayer :videoUrl="videoRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
+              :clickedTranscriptTime="clickedTranscriptTime"></VideoPlayer>
+          </div>
+          <div class="col-sm-12 mt-3">
+            <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
+              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" />
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <Feedback :showAnnotationTextboxes="true" :transcript="transcript"
+            :sessionID="sessionID" @highlight-transcript="setHighlightTranscript" />
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script lang="ts">
 import { ref } from 'vue';
 import GPTService from '@/services/gptService';
+import VideoPlayer from '@/components/V2/VideoPlayer.vue';
+import TranscriptDisplay from '@/components/TranscriptDisplay.vue';
+import Feedback from '@/components/Feedback.vue';
+
 
 export default {
   name: 'WebcamRecorder',
+  components: {
+    VideoPlayer,
+    TranscriptDisplay,
+    Feedback
+  },
   data() {
     return {
       videoRecording: false,
       audioRecording: false,
       videoRecordingFinished: false,
       audioRecordingFinished: false,
-      videoRecordingUrl: '',
+      videoRecordingUrl: ref<string | null>(null),
       audioRecordingUrl: '',
       videoMediaRecorder: null as MediaRecorder | null,
       audioMediaRecorder: null as MediaRecorder | null,
       videoStartTime: null as Date | null, // Store video start time
-      audioStartTimestamps: [] as Number[],
+      userAudioStartTimestamps: [] as Number[],
       responseStartTimestamps: [] as Number[],
+      idxUserAudio: 0,
       responseAudios: [] as any[],
       backendURL: import.meta.env.VITE_BACKEND_URL,
+
+      transcript: ref<any[]>([]),
+      sessionID: ref(""),
+      timestampHighlightsData: ref<[number, number][]>([]),
+      transcriptLoading: ref(false),
+      currentVideoSeekTime: ref<number>(0),
+      clickedTranscriptTime: ref<number>(0)
     };
   },
   mounted() {
@@ -50,8 +85,6 @@ export default {
 
         this.videoMediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            this.videoRecordingUrl = URL.createObjectURL(event.data);
-
             this.mergeVideoAndAudio(event.data);
           }
         };
@@ -64,13 +97,21 @@ export default {
             const gptService = new GPTService();
             // Send the audioBlob to the Whisper API to get the transcript
             gptService.getTranscriptFromWhisper(event.data).then(
-              transcript => {
-                console.log(transcript);
+              transcriptFromUser => {
+                console.log(transcriptFromUser);
+                this.transcript.push({
+                  text: transcriptFromUser,
+                  timeOffset: this.userAudioStartTimestamps[this.idxUserAudio++],
+                  speaker: 'User',
+                })
 
-                gptService.generateGptResponse(transcript).then(async ttsResponseData => {
+                gptService.generateGptResponse(transcriptFromUser).then(async gptResponse => {
+                  const ttsResponseData = gptResponse[0];
+                  const gptResponseText = gptResponse[1];
+
                   // Play the TTS audio
                   const audioContext = new AudioContext();
-                                    // Convert the Blob into an ArrayBuffer
+                  // Convert the Blob into an ArrayBuffer
                   const arrayBuffer = await ttsResponseData.arrayBuffer();
 
                   // Decode the ArrayBuffer into audio data
@@ -81,9 +122,16 @@ export default {
                   source.connect(audioContext.destination);
                   source.start();
 
-                  this.responseStartTimestamps.push(this.getTimeElapsed());
-                  this.audioStartTimestamps.push(this.getTimeElapsed());
+
+                  const timeNow = this.getTimeElapsed()
+                  this.responseStartTimestamps.push(timeNow);
                   this.responseAudios.push(ttsResponseData);
+
+                  this.transcript.push({
+                    text: gptResponseText,
+                    timeOffset: timeNow,
+                    speaker: 'Assistant',
+                  })
                 });
               }
             );
@@ -115,7 +163,7 @@ export default {
         this.audioRecording = true;
         this.audioMediaRecorder.start();
 
-        this.audioStartTimestamps.push(this.getTimeElapsed());
+        this.userAudioStartTimestamps.push(this.getTimeElapsed());
       }
     },
     stopAudio() {
@@ -133,44 +181,58 @@ export default {
       }
       return -1;
     },
-    async mergeVideoAndAudio(videoBlob : Blob) {
-      if (this.videoRecordingUrl) {
-        console.log("merging")
-        console.log(this.responseAudios);
-        console.log(this.responseStartTimestamps);
-        // Create a FormData object to send the video file
-        const formData = new FormData();
-        formData.append('video', videoBlob);
-        for (let i = 0; i < this.responseAudios.length; i++) {
-          formData.append('audio', this.responseAudios[i]);
+    async mergeVideoAndAudio(videoBlob: Blob) {
+      console.log("merging")
+      console.log(this.responseAudios);
+      console.log(this.responseStartTimestamps);
+      // Create a FormData object to send the video file
+      const formData = new FormData();
+      formData.append('video', videoBlob);
+      for (let i = 0; i < this.responseAudios.length; i++) {
+        formData.append('audio', this.responseAudios[i]);
+      }
+      formData.append('start_times', JSON.stringify(this.responseStartTimestamps))
+
+      // Define the URL of your backend endpoint for video
+      const APIendpoint = `${this.backendURL}/video/merge`;
+
+      try {
+        const response = await fetch(APIendpoint, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          console.log('Video file merged successfully.');
+
+          const mergedVideoBlob = await response.blob();
+          console.log(mergedVideoBlob);
+          this.videoRecordingUrl = URL.createObjectURL(mergedVideoBlob);
+
+          console.log('Merged video is ready to download');
+
+        } else {
+          console.error('Failed to merge video file.');
         }
-        formData.append('start_times',  JSON.stringify(this.responseStartTimestamps))
-
-        // Define the URL of your backend endpoint for video
-        const APIendpoint = `${this.backendURL}/video/merge`;
-
-        try {
-          const response = await fetch(APIendpoint, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (response.ok) {
-            console.log('Video file merged successfully.');
-
-            const mergedVideoBlob = await response.blob();
-            console.log(mergedVideoBlob);
-            this.videoRecordingUrl = URL.createObjectURL(mergedVideoBlob);
-
-            console.log('Merged video is ready to download');
-          } else {
-            console.error('Failed to merge video file.');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-        }
+      } catch (error) {
+        console.error('Error:', error);
       }
     },
+    setHighlightTranscript(data: [number, number]){
+      this.timestampHighlightsData = [];
+      this.timestampHighlightsData.push(data);
+    },
+
+    handleTranscriptClick(time: number) {
+
+      this.clickedTranscriptTime = time
+
+    },
+
+    updateCurrentVideoSeekTime(seekTime: number) {
+      this.currentVideoSeekTime = seekTime
+    }
   },
+
 };
 </script>
