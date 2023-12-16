@@ -43,24 +43,33 @@ export default class GPTService {
         }
     };
 
-    async generateGptResponse(input: String) {
+    async generateGptResponse(transcript: Array<{ text: string, timeOffset: number, speaker: string }>, instruction: string) {
         try {
             const apiKey = import.meta.env.VITE_OPEN_AI_KEY;
 
+
+            const messages: Array<{ role: string, content: string}> = transcript.map(item => {
+                // You can provide values for the properties as needed
+                return {
+                  role: item["speaker"].toLowerCase(),
+                  content: item["text"],
+                };
+              });
+
+            messages.push({
+                role: 'system',
+                content: instruction,
+            })
+
+            console.log(messages)
+    
             // Define the request payload following the cURL example
             const requestData = {
                 model: 'gpt-3.5-turbo',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a helpful assistant.'
-                    },
-                    {
-                        role: 'user',
-                        content: input // Use the input as the user message
-                    }
-                ]
+                messages: messages,
             };
+
+            console.log(requestData)
 
             // Send the request to the OpenAI API
             const gptResponse = await axios.post('https://api.openai.com/v1/chat/completions', requestData, {

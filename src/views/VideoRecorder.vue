@@ -34,7 +34,8 @@ import GPTService from '@/services/gptService';
 import VideoPlayer from '@/components/V2/VideoPlayer.vue';
 import TranscriptDisplay from '@/components/TranscriptDisplay.vue';
 import Feedback from '@/components/Feedback.vue';
-
+import {postInterviewData, postInterviewTranscriptData} from '@/services/backendService'
+import {v4 as uuidv4} from 'uuid';
 
 export default {
   name: 'WebcamRecorder',
@@ -65,23 +66,61 @@ export default {
       timestampHighlightsData: ref<[number, number][]>([]),
       transcriptLoading: ref(false),
       currentVideoSeekTime: ref<number>(0),
-      clickedTranscriptTime: ref<number>(0)
+      clickedTranscriptTime: ref<number>(0),
+
+      listQuestions: ref<string[]>([]),
+      listSystemInstruction: ref<string[]>([]),
+      idxInstruction: ref<number>(0),
+      depthFollowUpQuestion: 2,
     };
   },
   mounted() {
+    this.initListInstruction();
     this.getMedia();
   },
   methods: {
+    async initListInstruction(){
+      this.listQuestions = [
+        "Tell me about yourself?",
+        "Tell me about your past related experience?",
+        "What is your strength?",
+        "What is your weakness?",
+      ]
+
+      const concatenatedListQuestion = this.listQuestions.join(",");
+
+      // first prompt + question followed up by follow up question
+      this.listSystemInstruction = new Array<string>(this.listQuestions.length + this.listQuestions.length*this.depthFollowUpQuestion + 1)
+      let j = 0;
+      for (let i = 0; i<this.listQuestions.length; i++){
+        if (i==0) {
+          this.listSystemInstruction[j++] = "You have a role as a interviewer for Behavioral Job Interview. Act naturally as a interviewer with a dynamic but still professional. Say 'Hi, nice to meet you' first, introduce yourself, your name is Mr Interviewer, then ask this first question as the first question for the interview: " + this.listQuestions[0];
+        } else {
+          this.listSystemInstruction[j++] = `As an interviewer move to the next question (but still make the interaction smooth). Ask this question to the interviewee: '${this.listQuestions[i]}'` ;      
+        }
+
+        for (let cnt = 0; cnt<this.depthFollowUpQuestion; ++cnt){
+          this.listSystemInstruction[j++] = `As an interviewer ask a follow up questions based on the user answer and based on your previous question. Your follow up question cannot be similar to question on this list  [${concatenatedListQuestion}] and cannot be the same with your previous questions`
+        }
+      }
+      this.listSystemInstruction[this.listSystemInstruction.length-1] = "Now say that the interview process is over and thank for the time"
+    },
     async getMedia() {
       try {
         const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        
 
         const videoElement = this.$refs.videoElement as HTMLVideoElement;
         videoElement.srcObject = videoStream;
 
         this.videoMediaRecorder = new MediaRecorder(videoStream);
         this.audioMediaRecorder = new MediaRecorder(audioStream);
+
+        this.videoMediaRecorder.onstart = () => {
+          this.generateAssistantResponse();
+        }
 
         this.videoMediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -105,34 +144,7 @@ export default {
                   speaker: 'User',
                 })
 
-                gptService.generateGptResponse(transcriptFromUser).then(async gptResponse => {
-                  const ttsResponseData = gptResponse[0];
-                  const gptResponseText = gptResponse[1];
-
-                  // Play the TTS audio
-                  const audioContext = new AudioContext();
-                  // Convert the Blob into an ArrayBuffer
-                  const arrayBuffer = await ttsResponseData.arrayBuffer();
-
-                  // Decode the ArrayBuffer into audio data
-                  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                  const source = audioContext.createBufferSource();
-                  source.buffer = audioBuffer;
-                  source.connect(audioContext.destination);
-                  source.start();
-
-
-                  const timeNow = this.getTimeElapsed()
-                  this.responseStartTimestamps.push(timeNow);
-                  this.responseAudios.push(ttsResponseData);
-
-                  this.transcript.push({
-                    text: gptResponseText,
-                    timeOffset: timeNow,
-                    speaker: 'Assistant',
-                  })
-                });
+               this.generateAssistantResponse();
               }
             );
           }
@@ -142,6 +154,38 @@ export default {
         console.error('Error accessing webcam:', err);
       }
     },
+    generateAssistantResponse(){
+      const gptService = new GPTService();
+      gptService.generateGptResponse(this.transcript, this.listSystemInstruction[this.idxInstruction++]).then(async gptResponse => {
+        const ttsResponseData = gptResponse[0];
+        const gptResponseText = gptResponse[1];
+
+        // Play the TTS audio
+        const audioContext = new AudioContext();
+        // Convert the Blob into an ArrayBuffer
+        const arrayBuffer = await ttsResponseData.arrayBuffer();
+
+        // Decode the ArrayBuffer into audio data
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start();
+
+
+        const timeNow = this.getTimeElapsed()
+        this.responseStartTimestamps.push(timeNow);
+        this.responseAudios.push(ttsResponseData);
+
+        this.transcript.push({
+          text: gptResponseText,
+          timeOffset: timeNow,
+          speaker: 'Assistant',
+        })
+      });
+    },
+
     startVideo() {
       if (this.videoMediaRecorder) {
         this.videoRecordingFinished = false;
@@ -155,6 +199,20 @@ export default {
         this.videoMediaRecorder.stop();
         this.videoRecording = false;
         this.videoRecordingFinished = true;
+
+        // Get the video tracks from the stream and stop them
+        const videoTracks = this.videoMediaRecorder.stream?.getVideoTracks();
+        if (videoTracks) {
+          videoTracks.forEach(track => track.stop());
+        }
+
+        if (this.audioMediaRecorder){
+          const audioTracks = this.audioMediaRecorder.stream?.getAudioTracks();
+          if (audioTracks) {
+            audioTracks.forEach(track => track.stop());
+          }
+        }
+        
       }
     },
     startAudio() {
@@ -204,8 +262,24 @@ export default {
 
         if (response.ok) {
           console.log('Video file merged successfully.');
-
           const mergedVideoBlob = await response.blob();
+
+          let myuuid = uuidv4();
+          this.sessionID = `${myuuid}_${Date.now()}`
+
+          await postInterviewData({
+            sessionID: this.sessionID,
+            username_interviewer: 'interviewer_username',
+            username_interviewee: 'interviewee_username',
+            transcript_link: 'none',
+            video_link: "none",
+          })
+
+          postInterviewTranscriptData({
+            sessionID: this.sessionID,
+            transcript: this.transcript,
+          })
+
           console.log(mergedVideoBlob);
           this.videoRecordingUrl = URL.createObjectURL(mergedVideoBlob);
 
