@@ -9,7 +9,10 @@ import App from './App.vue';
 import firebase from 'firebase/app';
 import 'firebase/storage';
 
+import router from './router';
+
 const app = createApp(App);
+app.use(router);
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,7 +25,6 @@ const firebaseConfig = {
 
 // Initialize Firebase with the configuration
 firebase.initializeApp(firebaseConfig);
-
 
 
 app.mount('#app');
