@@ -5,7 +5,7 @@
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
         <div class="message-container">
           <div class="content">
-            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1', 'speaker-2': message.speaker === 'Speaker 2' }"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'User', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'Assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
           </div>
           <div class="time"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>
@@ -21,7 +21,6 @@ import { defineComponent, ref, watch } from 'vue';
 interface TranscriptMessage {
   text: string;
   timeOffset: number;
-  duration: number;
   speaker: string;
 }
 
@@ -168,7 +167,7 @@ export default defineComponent({
 .chat-area {
   border: 1px solid #ccc;
   background: white;
-  height: 33vh;
+  max-height: 27rem;
   padding: 1em;
   overflow: auto;
   max-width: 40rem;
@@ -196,7 +195,7 @@ export default defineComponent({
   padding: .5em;
   margin-bottom: .5em;
   margin-top: .5em;
-  font-size: .8em;
+  font-size: .9em;
   text-align: left;
 }
 
