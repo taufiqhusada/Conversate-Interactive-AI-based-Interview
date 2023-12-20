@@ -6,7 +6,7 @@
         <div class="circle"></div>
         <div class="circle"></div>
       </div>
-      <p class="loading-text mt-3 pt-3">Loading video transcript...</p>
+      <p class="loading-text mt-3 pt-3">Loading...</p>
     </div>
   </template>
   

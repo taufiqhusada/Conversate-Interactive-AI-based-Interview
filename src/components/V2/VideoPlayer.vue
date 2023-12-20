@@ -67,6 +67,6 @@ export default defineComponent({
   width: 100%;
   height: auto;
   max-width: 100%;
-  max-height: 24rem;
+  max-height: 15rem;
 }
 </style>

@@ -2,6 +2,13 @@
 import axios from 'axios';
 import fs from 'fs';
 
+export interface Subtitle {
+    number: string;
+    startTime: number;
+    endTime: number;
+    text: string;
+}
+
 export default class GPTService {
     async getTranscriptFromWhisper(audioBlob: Blob) {
         try {
@@ -20,7 +27,9 @@ export default class GPTService {
 
             formData.append('model', 'whisper-1');
 
-            console.log(formData);
+            formData.append('language', 'en');
+            formData.append('response_format', 'srt');
+
 
             // Make an HTTP POST request to the Whisper API
             const response = await axios.post(apiUrl, formData, {
@@ -33,13 +42,14 @@ export default class GPTService {
             console.log(response);
 
             // Extract the transcript from the response
-            const transcript = response.data.text;
+            const transcript = response.data;
+            console.log(transcript);
 
-            return transcript;
+            return this.extractSubtitles(transcript);
 
         } catch (error) {
             console.error('Error getting transcript from Whisper API:', error);
-            return '';
+            return [];
         }
     };
 
@@ -48,13 +58,13 @@ export default class GPTService {
             const apiKey = import.meta.env.VITE_OPEN_AI_KEY;
 
 
-            const messages: Array<{ role: string, content: string}> = transcript.map(item => {
+            const messages: Array<{ role: string, content: string }> = transcript.map(item => {
                 // You can provide values for the properties as needed
                 return {
-                  role: item["speaker"].toLowerCase(),
-                  content: item["text"],
+                    role: item["speaker"].toLowerCase(),
+                    content: item["text"],
                 };
-              });
+            });
 
             messages.push({
                 role: 'system',
@@ -62,7 +72,7 @@ export default class GPTService {
             })
 
             console.log(messages)
-    
+
             // Define the request payload following the cURL example
             const requestData = {
                 model: 'gpt-3.5-turbo',
@@ -79,7 +89,7 @@ export default class GPTService {
                 }
             });
 
-            const assistantResponse =  gptResponse.data.choices[0].message.content;
+            const assistantResponse = gptResponse.data.choices[0].message.content;
 
             // Generate and play TTS audio from the GPT response
             const audioBuffer = await this.generateTTS(assistantResponse);
@@ -89,6 +99,61 @@ export default class GPTService {
             console.error('Error generating GPT response:', error);
             return '';
         }
+    };
+
+    async extractSubtitles(strSubtitle: String) {
+        const subtitleBlocks = strSubtitle.trim().split('\n\n')
+        console.log(subtitleBlocks);
+
+        // Initialize an array to store the parsed subtitles
+        const subtitles: Subtitle[] = [];
+
+        // Iterate through each subtitle block
+        subtitleBlocks.forEach((block) => {
+            // Split the block into lines
+            const lines = block.trim().split('\n');
+
+            // Extract the subtitle number (e.g., "1")
+            const subtitleNumber = lines[0];
+
+            // Extract the subtitle timing (e.g., "00:00:05,000 --> 00:00:10,000")
+            const timing = lines[1];
+
+            // Extract the subtitle text (remaining lines)
+            const text = lines.slice(2).join('\n');
+
+            // Split the timing into start and end times
+            let [startTime, endTime] = timing.split(' --> ');
+
+            // Create a subtitle object with parsed data
+            const subtitle = {
+                number: subtitleNumber,
+                startTime: this.srtTimeToSeconds(startTime),
+                endTime: this.srtTimeToSeconds(endTime),
+                text,
+            };
+
+            // Push the subtitle object to the subtitles array
+            subtitles.push(subtitle);
+        });
+
+        return subtitles;
+    }
+
+    srtTimeToSeconds(srtTime: string) {
+        // Split the time into parts: hours, minutes, seconds, and milliseconds
+        const parts = srtTime.replace(',', '.').split(':');
+
+        // Extract hours, minutes, seconds, and milliseconds
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        const seconds = parseFloat(parts[2]);
+        const milliseconds = parts[3] ? parseFloat(parts[3]) : 0;
+
+        // Calculate the total duration in seconds
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds + milliseconds / 1000;
+
+        return totalSeconds;
     };
 
     // Function to generate TTS audio from text

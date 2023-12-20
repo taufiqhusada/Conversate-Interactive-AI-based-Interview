@@ -167,7 +167,7 @@ export default defineComponent({
 .chat-area {
   border: 1px solid #ccc;
   background: white;
-  height: 33vh;
+  max-height: 27rem;
   padding: 1em;
   overflow: auto;
   max-width: 40rem;
@@ -195,7 +195,7 @@ export default defineComponent({
   padding: .5em;
   margin-bottom: .5em;
   margin-top: .5em;
-  font-size: .8em;
+  font-size: .9em;
   text-align: left;
 }
 
