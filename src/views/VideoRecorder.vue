@@ -197,6 +197,8 @@ export default {
             audioView[i] = audioData.charCodeAt(i);
           }
 
+          const audioBlob = new Blob([audioView], { type: 'audio/mp3' });
+
           // Decode the ArrayBuffer into audio data
           audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
             const source = audioContext.createBufferSource();
@@ -210,18 +212,19 @@ export default {
 
             showLoader.value = false;
             source.start();
-          });
-          showSpeaker.value = true;
+            showSpeaker.value = true;
 
-          const timeNow = getTimeElapsed();
-          responseStartTimestamps.value.push(timeNow);
-          responseAudios.value.push(ttsResponseData);
+            const timeNow = getTimeElapsed();
+            responseStartTimestamps.value.push(timeNow);
+            responseAudios.value.push(audioBlob);
 
-          transcript.value.push({
-            text: gptResponseText,
-            timeOffset: timeNow,
-            speaker: 'Assistant',
+            transcript.value.push({
+              text: gptResponseText,
+              timeOffset: timeNow,
+              speaker: 'Assistant',
+            });
           });
+          
         }
       ).catch(error => {
         console.log("error", error);
