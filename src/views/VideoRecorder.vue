@@ -124,7 +124,7 @@ export default {
 
     const getMedia = async () => {
       try {
-        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true  });
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
         if (videoElement.value) {
@@ -133,8 +133,14 @@ export default {
         videoMediaRecorder.value = new MediaRecorder(videoStream);
         audioMediaRecorder.value = new MediaRecorder(audioStream);
 
-        videoMediaRecorder.value.onstart = () => {
+        videoMediaRecorder.value.onstart = async () => {
+          showLoader.value = true;
+          videoRecordingFinished.value = false;
+          videoRecording.value = true;
+          videoStartTime.value = new Date(); // Store video start time
+          
           generateAssistantResponse();
+          
         };
 
         videoMediaRecorder.value.ondataavailable = (event) => {
@@ -147,6 +153,7 @@ export default {
           if (event.data.size > 0) {
             const gptService = new GPTService();
             gptService.getTranscriptFromWhisper(event.data).then((listTranscriptFromUser) => {
+              console.log(listTranscriptFromUser)
               listTranscriptFromUser.forEach((item) => {
                 const timeStartOffset = userAudioStartTimestamps.value[idxUserAudio.value++];
                 transcript.value.push({
@@ -157,10 +164,16 @@ export default {
               });
 
               generateAssistantResponse();
+            }).catch(error => {
+              console.log("error", error);
+              showSpeaker.value = false;
+              showLoader.value = false;
+              alert("error" + error);
             });
           }
         };
       } catch (err) {
+        alert('Error accessing webcam:' + err);
         console.error('Error accessing webcam:', err);
       }
     };
@@ -173,25 +186,31 @@ export default {
           const ttsResponseData = gptResponse[0];
           const gptResponseText = gptResponse[1];
 
-          // Play the TTS audio
           const audioContext = new AudioContext();
-          // Convert the Blob into an ArrayBuffer
-          const arrayBuffer = await ttsResponseData.arrayBuffer();
+
+          const audioData = atob(ttsResponseData);
+
+          // Convert the audio data to an ArrayBuffer
+          const audioBuffer = new ArrayBuffer(audioData.length);
+          const audioView = new Uint8Array(audioBuffer);
+          for (let i = 0; i < audioData.length; i++) {
+            audioView[i] = audioData.charCodeAt(i);
+          }
 
           // Decode the ArrayBuffer into audio data
-          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          audioContext.decodeAudioData(audioBuffer, (decodedBuffer) => {
+            const source = audioContext.createBufferSource();
+            source.buffer = decodedBuffer;
+            source.connect(audioContext.destination);
 
-          const source = audioContext.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(audioContext.destination);
+            source.onended = () => {
+              // Audio has ended, add your logic here
+              showSpeaker.value = false;
+            };
 
-          source.onended = () => {
-            // Audio has ended, set showSpeaker to false here
-            showSpeaker.value = false;
-          };
-
-          showLoader.value = false;
-          source.start();
+            showLoader.value = false;
+            source.start();
+          });
           showSpeaker.value = true;
 
           const timeNow = getTimeElapsed();
@@ -204,15 +223,16 @@ export default {
             speaker: 'Assistant',
           });
         }
-      );
+      ).catch(error => {
+        console.log("error", error);
+        showSpeaker.value = false;
+        showLoader.value = false;
+        alert("error" + error);
+      });
     };
 
     const startVideo = () => {
       if (videoMediaRecorder.value) {
-        showLoader.value = true;
-        videoRecordingFinished.value = false;
-        videoRecording.value = true;
-        videoStartTime.value = new Date(); // Store video start time
         videoMediaRecorder.value.start();
       }
     };
@@ -317,6 +337,7 @@ export default {
         }
       } catch (error) {
         console.error('Error:', error);
+        alert("error" + error);
       }
     };
 
