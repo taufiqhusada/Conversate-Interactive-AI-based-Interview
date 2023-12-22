@@ -96,9 +96,10 @@ export default {
     const initListInstruction = () => {
       listQuestions.value = [
         "Tell me about yourself?",
-        "Tell me about your past related experience?",
-        "What is your strength?",
-        "What is your weakness?",
+        "How has your previous education and experience prepared you for this job?",
+        "What do you consider to be your greatest strength and why?",
+        "What do you consider to be your greatest challenge (weakness)? How are you going about improving up on it?",
+        "Describe a time when you used teamwork to achieve a goal. What was your role and the resulting outcome?"
       ];
 
       const concatenatedListQuestion = listQuestions.value.join(',');
