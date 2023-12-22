@@ -43,6 +43,7 @@ import TranscriptDisplay from '@/components/TranscriptDisplay.vue';
 import Feedback from '@/components/Feedback.vue';
 import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
+import axios from 'axios';
 
 export default {
   name: 'WebcamRecorder',
@@ -305,14 +306,11 @@ export default {
       const APIendpoint = `${backendURL}/video/merge`;
 
       try {
-        const response = await fetch(APIendpoint, {
-          method: 'POST',
-          body: formData,
-        });
+        const response =  await axios.post(APIendpoint, formData);
 
-        if (response.ok) {
+        if (response.status >= 200) {
           console.log('Video file merged successfully.');
-          const mergedVideoBlob = await response.blob();
+          const mergedVideoUrl = response.data['data']['url'];
 
           let myuuid = uuidv4();
           sessionID.value = `${myuuid}_${Date.now()}`;
@@ -322,7 +320,7 @@ export default {
             username_interviewer: 'interviewer_username',
             username_interviewee: 'interviewee_username',
             transcript_link: 'none',
-            video_link: 'none',
+            video_link: mergedVideoUrl,
           });
 
           await postInterviewTranscriptData({
@@ -332,7 +330,7 @@ export default {
 
           showLoader.value = false;
 
-          videoRecordingUrl.value = URL.createObjectURL(mergedVideoBlob);
+          videoRecordingUrl.value = mergedVideoUrl;
 
           console.log('Merged video is ready to download');
         } else {
