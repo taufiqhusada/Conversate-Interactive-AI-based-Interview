@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <template v-if="!videoRecordingUrl">
+    <template v-if="!audioRecordingUrl">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
         <button class="btn btn-outline-primary m-2" @click="startVideo" v-if="!videoRecording && !showLoader">Start Session</button>
@@ -16,7 +16,7 @@
       <div class="row">
         <div class="col-sm-6">
           <div class="video-uploader-container">
-            <VideoPlayer :videoUrl="videoRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
+            <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
               :clickedTranscriptTime="clickedTranscriptTime"></VideoPlayer>
           </div>
           <div class="col-sm-12 mt-3">
@@ -61,7 +61,7 @@ export default {
     const audioRecording = ref<boolean>(false);
     const videoRecordingFinished = ref<boolean>(false);
     const audioRecordingFinished = ref<boolean>(false);
-    const videoRecordingUrl = ref<string | null>(null);
+    const audioRecordingUrl = ref<string | null>(null);
     const videoMediaRecorder = ref<MediaRecorder | null>(null);
     const audioMediaRecorder = ref<MediaRecorder | null>(null);
     const videoStartTime = ref<Date | null>(null);
@@ -85,6 +85,8 @@ export default {
 
     const showSpeaker = ref<boolean>(false);
     const showLoader = ref<boolean>(false);
+
+    const videoStream = ref<MediaStream | null>(null);
 
     onMounted(() => {
       initListInstruction();
@@ -125,13 +127,19 @@ export default {
 
     const getMedia = async () => {
       try {
-        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true  });
+        videoStream.value = await navigator.mediaDevices.getUserMedia({ video: true, audio: true  });
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+        const audioOnlyStream = new MediaStream();
+          videoStream.value.getAudioTracks().forEach((audioTrack) => {
+            audioOnlyStream.addTrack(audioTrack);
+        });
+
+
         if (videoElement.value) {
-          videoElement.value.srcObject = videoStream;
+          videoElement.value.srcObject = videoStream.value;
         }
-        videoMediaRecorder.value = new MediaRecorder(videoStream);
+        videoMediaRecorder.value = new MediaRecorder(audioOnlyStream);
         audioMediaRecorder.value = new MediaRecorder(audioStream);
 
         videoMediaRecorder.value.onstart = async () => {
@@ -260,6 +268,12 @@ export default {
             audioTracks.forEach((track) => track.stop());
           }
         }
+
+        if (videoStream.value) {
+          const tracks = videoStream.value.getTracks();
+          tracks.forEach((track) => track.stop());
+          videoStream.value = null;
+        }
       }
     };
 
@@ -291,12 +305,12 @@ export default {
       return -1;
     };
 
-    const mergeVideoAndAudio = async (videoBlob: Blob) => {
+    const mergeVideoAndAudio = async (userAudioBlob: Blob) => {
       showLoader.value = true;
       console.log('merging');
       // Create a FormData object to send the video file
       const formData = new FormData();
-      formData.append('video', videoBlob);
+      formData.append('user_audio', userAudioBlob);
       for (let i = 0; i < responseAudios.value.length; i++) {
         formData.append('audio', responseAudios.value[i]);
       }
@@ -330,7 +344,7 @@ export default {
 
           showLoader.value = false;
 
-          videoRecordingUrl.value = mergedVideoUrl;
+          audioRecordingUrl.value = mergedVideoUrl;
 
           console.log('Merged video is ready to download');
         } else {
@@ -361,7 +375,7 @@ export default {
       audioRecording,
       videoRecordingFinished,
       audioRecordingFinished,
-      videoRecordingUrl,
+      audioRecordingUrl,
       videoMediaRecorder,
       audioMediaRecorder,
       videoStartTime,

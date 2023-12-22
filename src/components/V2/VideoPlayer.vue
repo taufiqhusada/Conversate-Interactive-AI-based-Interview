@@ -1,8 +1,8 @@
 <template>
   <div>
-    <video controls class="videoPlayer mt-4" ref="videoPlayerRef" @timeupdate="updateSeekTime">
-      <source :src="videoUrl" type="video/mp4" />
-    </video>
+    <audio controls class="audioPlayer shadow" ref="audioPlayerRef" @timeupdate="updateSeekTime">
+      <source :src="audioUrl" type="audio/mpeg" />
+    </audio>
   </div>
 </template>
 
@@ -11,7 +11,7 @@ import { ref, defineComponent, onMounted, watch } from 'vue';
 
 export default defineComponent({
   props: {
-    videoUrl: {
+    audioUrl: {
       type: String,
     },
     clickedTranscriptTime: {
@@ -19,14 +19,14 @@ export default defineComponent({
     },
   },
   setup(props, context) {
-    const videoPlayerRef = ref<HTMLVideoElement | null>(null);
-    const prevVideoSeekTime = ref<number>(0);
+    const audioPlayerRef = ref<HTMLAudioElement | null>(null);
+    const prevSeekTime = ref<number>(0);
 
     const updateSeekTime = () => {
-      if (videoPlayerRef.value) {
-        const currentTime = videoPlayerRef.value.currentTime;
-        if (Math.abs(currentTime - prevVideoSeekTime.value) >= 0.1) {
-          prevVideoSeekTime.value = currentTime;
+      if (audioPlayerRef.value) {
+        const currentTime = audioPlayerRef.value.currentTime;
+        if (Math.abs(currentTime - prevSeekTime.value) >= 0.1) {
+          prevSeekTime.value = currentTime;
           context.emit('video-seek-time-updated', currentTime);
         }
       }
@@ -37,8 +37,8 @@ export default defineComponent({
     };
 
     watch(() => props.clickedTranscriptTime, () => {
-      if (videoPlayerRef.value && typeof props.clickedTranscriptTime === 'number') {
-        videoPlayerRef.value.currentTime = props.clickedTranscriptTime;
+      if (audioPlayerRef.value && typeof props.clickedTranscriptTime === 'number') {
+        audioPlayerRef.value.currentTime = props.clickedTranscriptTime;
       }
     });
 
@@ -56,17 +56,28 @@ export default defineComponent({
     return {
       Init,
       updateSeekTime,
-      videoPlayerRef,
+      audioPlayerRef,
     };
   }
 });
 </script>
 
 <style scoped>
-.videoPlayer {
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  max-height: 15rem;
+.audioPlayer {
+    /* width: 66%;
+    height: auto; */
+    padding: 20px;
+    border-radius: 5px;
+    background-color: #eee;
+    color: #444;
+    margin: 20px auto;
+    overflow: hidden;
+    
+}
+audio {
+  width:100%;
+}
+audio:nth-child(2), audio:nth-child(4), audio:nth-child(6) {
+    margin: 0;
 }
 </style>
