@@ -163,8 +163,9 @@ export default {
             const gptService = new GPTService();
             gptService.getTranscriptFromWhisper(event.data).then((listTranscriptFromUser) => {
               console.log(listTranscriptFromUser)
+              const timeStartOffset = userAudioStartTimestamps.value[idxUserAudio.value++];
+
               listTranscriptFromUser.forEach((item) => {
-                const timeStartOffset = userAudioStartTimestamps.value[idxUserAudio.value++];
                 transcript.value.push({
                   text: item.text,
                   timeOffset: item.startTime + timeStartOffset,
