@@ -119,7 +119,7 @@ export default {
 
         for (let cnt = 0; cnt < depthFollowUpQuestion; ++cnt) {
           listSystemInstruction.value[j++] =
-            `As an interviewer ask a follow-up question based on the user previous answers and based on your previous question. Your follow-up question cannot be similar to the questions on this list [${concatenatedListQuestion}] and cannot be the same as your previous questions`;
+            `As an interviewer ask a relevant follow-up question to the job based on the user previous answers and based on your previous question. Your follow-up question CANNOT BE SIMILAR TO THE QUESTIONS ON THIS LIST [${concatenatedListQuestion}] and cannot be the same as your previous questions`;
         }
       }
       listSystemInstruction.value[listSystemInstruction.value.length - 1] =
