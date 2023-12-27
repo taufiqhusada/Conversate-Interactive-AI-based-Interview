@@ -14,7 +14,7 @@
     </template>
     <template v-else>
       <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-5">
           <div class="video-uploader-container">
             <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
               :clickedTranscriptTime="clickedTranscriptTime"></VideoPlayer>
@@ -24,7 +24,7 @@
               :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" />
           </div>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-7">
           <Feedback :showAnnotationTextboxes="true" :transcript="transcript" :sessionID="sessionID"
             @highlight-transcript="setHighlightTranscript" />
         </div>

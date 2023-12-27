@@ -415,7 +415,7 @@ export default defineComponent({
 .contact {
     position: relative;
     padding-left: 2rem;
-    height: 4.5rem;
+    height: 3rem;
     display: flex;
     flex-direction: column;
     justify-content: center;

@@ -9,7 +9,7 @@
         <span class="time">{{ currentTimeFormatted }} / {{ durationFormatted }}</span>
       </div>
       <div class="seekBar" ref="seekBarRef" @click="seekAudio($event)">
-        <div class="progress" :style="{ width: progress + '%' }"></div>
+        <div class="progress" :style="{ width: progress + '%'}"></div>
         <!-- Timestamp marks --> 
         <div v-for="(timestamp, index) in suggestedTimestamps" :key="index"
              class="timestampMark"
@@ -121,7 +121,7 @@ export default defineComponent({
       audioPlayerRef.value.currentTime = newTime;
     };
 
-    const updateSeekBarWidth = (e: MouseEvent) => {
+    const updateSeekBarWidth = (e: Event) => {
       // Assuming that you want to update the progress bar width when window resizes.
       // This function should contain the logic to update the progress bar's width.
       // You may need to recalculate the positions of your timestamp marks here.
@@ -222,6 +222,7 @@ audio:nth-child(6) {
 
 .time {
   margin: 0 10px;
+  font-size: 14px;
 }
 
 .seekBar {
