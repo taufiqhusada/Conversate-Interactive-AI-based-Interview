@@ -26,7 +26,7 @@
         </div>
         <div class="col-sm-7">
           <Feedback :showAnnotationTextboxes="true" :transcript="transcript" :sessionID="sessionID"
-            @highlight-transcript="setHighlightTranscript" />
+            @highlight-transcript="setHighlightTranscript" :currentVideoSeekTime="currentVideoSeekTime" />
         </div>
       </div>
     </template>

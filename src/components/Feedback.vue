@@ -4,10 +4,24 @@
         <form>
             <div class="form-group row mb-3">
                 <div class="col">
-                    <input v-model="startTimeHHMMSS" class="form-control" type="text" placeholder="Start Time (hh:mm:ss)">
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default pin-button" type="button" @click="getTime('start')">
+                                <img src="/images/pin.png" alt="Pin" class="pin-icon">
+                            </button>
+                        </span>
+                        <input type="text" class="form-control time-input" v-model="startTimeHHMMSS" placeholder="Start Time (hh:mm:ss)">
+                    </div>
                 </div>
                 <div class="col">
-                    <input v-model="endTimeHHMMSS" class="form-control" type="text" placeholder="End Time (hh:mm:ss)">
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default pin-button" type="button" @click="getTime('end')">
+                                <img src="/images/pin.png" alt="Pin" class="pin-icon">
+                            </button>
+                        </span>
+                        <input type="text" class="form-control time-input" v-model="endTimeHHMMSS" placeholder="End Time (hh:mm:ss)">
+                    </div>
                 </div>
             </div>
             <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
@@ -103,6 +117,9 @@ export default defineComponent({
         sessionID: {
             type: String,
             required: true,
+        },
+        currentVideoSeekTime: {
+            type: Number,
         }
     },
     data() {
@@ -396,6 +413,14 @@ export default defineComponent({
                 this.isRecording = true;
             }
         },
+
+        getTime(id: string){
+            if (id=='start'){
+                this.startTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+            } else {
+                this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+            }
+        }
     },
 
     watch: {
@@ -634,5 +659,40 @@ input::placeholder {
 /* Apply the animation to the chatbox */
 .message {
     animation: fadeIn 0.5s ease-in-out;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+}
+
+.time-input {
+  flex-grow: 1;
+  border: none; /* Remove input border */
+}
+
+.input-group-btn {
+  padding: 0; /* Remove padding */
+  
+  border: none;
+    background-image: none;
+    padding: 0.1rem;
+    border-radius: 1.125rem;
+    box-shadow: 1px 2px 5px 1px rgba(0, 0, 0, 0.3);
+}
+
+.pin-button {
+  padding: 0.375rem 0.75rem;
+  margin-right: -1px;
+  border-top-left-radius: 1.125rem;
+  border-bottom-left-radius: 1.125rem;
+}
+
+.pin-button:hover {
+  background-color: #e2e6ea; /* Slightly different background on hover/focus for feedback */
+}
+
+.pin-icon {
+  width: 16px; /* Or any other size */
+  height: auto;
 }
 </style>
