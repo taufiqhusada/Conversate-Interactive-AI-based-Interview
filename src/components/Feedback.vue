@@ -432,7 +432,7 @@ export default defineComponent({
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 30rem;
+    height: 55vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
