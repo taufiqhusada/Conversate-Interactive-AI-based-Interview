@@ -13,20 +13,20 @@
       </div>
     </template>
     <template v-else>
-      <div class="row">
-        <div class="col-sm-5">
-          <div class="video-uploader-container">
+      <div class="video-uploader-container">
             <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
-              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments"></VideoPlayer>
-          </div>
+              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments" :pinnedStart="pinnedStart" :pinnedEnd="pinnedEnd" :pinnedMoments="pinnedMoments"></VideoPlayer>
+      </div>
+      <div class="row">
+        <div class="col-sm-4">
           <div class="col-sm-12 mt-3">
             <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
               :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments"/>
           </div>
         </div>
-        <div class="col-sm-7">
+        <div class="col-sm-8">
           <Feedback :showAnnotationTextboxes="true" :transcript="transcript" :sessionID="sessionID"
-            @highlight-transcript="setHighlightTranscript" :currentVideoSeekTime="currentVideoSeekTime" />
+            @highlight-transcript="setHighlightTranscript" :currentVideoSeekTime="currentVideoSeekTime" @pin-moment="setPinMoment" @save-data="handleSaveData"/>
         </div>
       </div>
     </template>
@@ -96,6 +96,11 @@ export default {
 
     const videoStream = ref<MediaStream | null>(null);
     const identifiedMoments = ref<IdentifiedMoment[]>([])
+
+    const pinnedStart = ref<number>();
+    const pinnedEnd = ref<number>();
+    const pinnedMoments =  ref<[number, number][]>([]);
+
 
     onMounted(() => {
       initListInstruction();
@@ -387,6 +392,25 @@ export default {
       currentVideoSeekTime.value = seekTime;
     };
 
+    const setPinMoment = (isStart: boolean, time: number) => {
+      if (isStart){
+        pinnedStart.value = time
+      } else {
+        pinnedEnd.value = time
+      }
+    }
+
+    const handleSaveData = (currentIndex: number) => {
+      if (pinnedStart.value && pinnedEnd.value){
+        if (currentIndex >= 0 && currentIndex < pinnedMoments.value.length) {
+          pinnedMoments.value[currentIndex] = [pinnedStart.value, pinnedEnd.value]
+        }
+        else {
+          pinnedMoments.value.push([pinnedStart.value, pinnedEnd.value])
+        }
+      }
+    }
+
     return {
       videoElement,
       videoRecording,
@@ -422,7 +446,12 @@ export default {
       setHighlightTranscript,
       handleTranscriptClick,
       updateCurrentVideoSeekTime,
-      identifiedMoments
+      identifiedMoments,
+      setPinMoment,
+      pinnedStart,
+      pinnedEnd,
+      pinnedMoments,
+      handleSaveData
     };
   },
 };

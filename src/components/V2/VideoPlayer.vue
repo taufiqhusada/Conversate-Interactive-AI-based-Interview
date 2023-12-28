@@ -3,18 +3,36 @@
     <audio hidden controls class="audioPlayer shadow" ref="audioPlayerRef" @timeupdate="updateSeekTime">
       <source :src="audioUrl" type="audio/mpeg" />
     </audio>
-    <div class="audioPlayerContainer mt-4">
+    <div class="audioPlayerContainer mt-3">
       <div class="controls">
         <button @click="togglePlay" class="playPause">{{ isPlaying ? '⏸' : '▶️' }}</button>
         <span class="time">{{ currentTimeFormatted }} / {{ durationFormatted }}</span>
       </div>
-      <div class="seekBar" ref="seekBarRef" @click="seekAudio($event)">
+      <div class="seekBar" ref="seekBarRef" @click="seekAudio($event)" @mousedown="startDrag" @mousemove="dragging" @mouseup="endDrag">
         <div class="progress" :style="{ width: progress + '%'}"></div>
         <!-- Timestamp marks --> 
         <div v-for="(data, index) in identifiedMoments" :key="index"
              class="timestampMark"
              :style="{ left: calculateTimestampPosition(data['timeOffset_start']) + '%', 
                        width: calculateTimestampWidth(data['timeOffset_start'],data['timeOffset_end']) + '%' }"></div>
+
+        <div v-for="(data, index) in pinnedMoments" :key="index"
+             class="arrow-right"
+             :style="{ left: calculateTimestampPosition(data[0]) + '%'}"></div>
+
+        <div v-for="(data, index) in pinnedMoments" :key="index"
+             class="arrow-left"
+             :style="{ left: calculateTimestampPosition(data[1]) + '%'}"></div>
+
+        <div v-if="pinnedStart" class="arrow-right"
+             :style="{ left: calculateTimestampPosition(pinnedStart) + '%'}"></div>
+
+        <div v-if="pinnedEnd" class="arrow-left"
+             :style="{ left: calculateTimestampPosition(pinnedEnd) + '%'}"></div>
+
+        <div v-if="currentTime" class="rectangle"
+             :style="{ left: calculateTimestampPosition(currentTime) - 0.2 + '%'}"></div>
+
       </div>
     </div>
   </div>
@@ -51,7 +69,16 @@ export default defineComponent({
     // },
     identifiedMoments: {
       type: Array as () => Array<IdentifiedMoment>
-    }
+    },
+    pinnedMoments: {
+      type: Array as () => Array<[number, number]>,
+    },
+    pinnedStart: {
+      type: Number
+    },
+    pinnedEnd: {
+      type: Number
+    },
   },
   setup(props, context) {
     const prevSeekTime = ref<number>(0);
@@ -61,6 +88,7 @@ export default defineComponent({
     const duration = ref(0);
     const currentTime = ref(0);
     const seekBarWidth = ref(0);
+    const isDragging = ref(false);
 
     const updateSeekTime = () => {
       if (audioPlayerRef.value) {
@@ -143,6 +171,22 @@ export default defineComponent({
       }, 200)
     };
 
+
+    const startDrag = (event: MouseEvent) => {
+      isDragging.value = true;
+      seekAudio(event);
+    };
+
+    const dragging = (event: MouseEvent) => {
+      if (isDragging.value ) {
+        seekAudio(event);
+      }
+    };
+
+    const endDrag = () => {
+      isDragging.value = false;
+    };
+
     onMounted(() => {
       audioPlayerRef.value.addEventListener('loadedmetadata', () => {
         duration.value = audioPlayerRef.value.duration;
@@ -175,7 +219,11 @@ export default defineComponent({
       isPlaying,
       currentTimeFormatted,
       durationFormatted,
-      calculateTimestampWidth
+      calculateTimestampWidth,
+      currentTime,
+      startDrag,
+      dragging,
+      endDrag,
     };
   }
 });
@@ -238,7 +286,7 @@ audio:nth-child(6) {
 
 .seekBar {
   flex-grow: 1;
-  height: 5px;
+  height: 7px;
   background-color: #ddd;
   border-radius: 5px;
   cursor: pointer;
@@ -269,5 +317,35 @@ audio:nth-child(6) {
   border-radius: 5px;
   pointer-events: none;
   /* Optional: to match the seek bar's rounded corners */
+}
+
+.arrow-right {
+  position: absolute;
+  bottom: -7px;
+  height: 100%;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  
+  border-left: 7px solid green;
+  pointer-events: none;
+}
+
+.arrow-left {
+  position: absolute;
+  bottom: -7px;
+  height: 100%;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  
+  border-right: 7px solid green;
+  pointer-events: none;
+}
+
+.rectangle {
+  position: absolute;
+  bottom: -7px;
+  height: 21px;
+  border-right: 4px solid blue;
+  pointer-events: none;
 }
 </style>

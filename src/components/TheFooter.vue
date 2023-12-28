@@ -34,8 +34,8 @@ footer {
 
 <template>
   <footer class="bg-dark text-light p-3 mt-3 fixed-bottom">
-    <div class="container">
+    <!-- <div class="container">
       <section class="copyright" style="font-weight: bold;">&copy; 2023 ANNOTATE REFLECT & REPEAT</section>
-    </div>
+    </div> -->
   </footer>
 </template>

@@ -50,7 +50,7 @@
 
                         <div v-if="message.dropdownItems">
                             <div class="dropdown m-2" @click="toggleDropdown">
-                                <button class="btn btn-outline-dark">Select Suggestion</button>
+                                <button class="btn btn-outline-dark">Select Question</button>
                                 <div class="dropdown-menu" v-show="isDropdownOpen">
                                     <a v-for="(item, index) in message.dropdownItems" :key="index" class="dropdown-item" @click="selectDropdownItem(item)">{{ item }}</a>
                                 </div>
@@ -62,7 +62,7 @@
                 </div>
             </div>
             <div class="input">
-                <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage" />
+                <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage"  ref="questionInputRef"/>
                 <i class="fas fa-microphone" @click="toggleRecording" :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
@@ -284,6 +284,8 @@ export default defineComponent({
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
+
+                        this.$emit('save-data', this.currentIndex)
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -308,6 +310,8 @@ export default defineComponent({
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
+
+                        this.$emit('save-data', this.currentIndex)
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -401,6 +405,11 @@ export default defineComponent({
                         .join('')
 
                     this.question = t;
+
+                    const textInput = this.$refs.questionInputRef  as HTMLInputElement;
+                        if (textInput) {
+                            textInput.scrollLeft = textInput.scrollWidth;
+                        }
                 };
 
                 // // Event handler when speech recognition is stopped
@@ -411,14 +420,25 @@ export default defineComponent({
                 // Start recognition
                 this.recognition.start();
                 this.isRecording = true;
+
+                const textInput = this.$refs.questionInputRef  as HTMLInputElement;
+                if (textInput) {
+                    console.log("focus")
+                    textInput.focus();
+                }
             }
         },
 
+
         getTime(id: string){
-            if (id=='start'){
-                this.startTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
-            } else {
-                this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+            if (this.currentVideoSeekTime) {
+                if (id=='start'){
+                    this.startTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+                    this.$emit('pin-moment', true, this.currentVideoSeekTime)
+                } else {
+                    this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+                    this.$emit('pin-moment', false, this.currentVideoSeekTime)
+                }
             }
         }
     },
@@ -457,7 +477,7 @@ export default defineComponent({
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 55vh;
+    height: 54vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
