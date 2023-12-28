@@ -17,11 +17,11 @@
         <div class="col-sm-5">
           <div class="video-uploader-container">
             <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
-              :clickedTranscriptTime="clickedTranscriptTime"></VideoPlayer>
+              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments"></VideoPlayer>
           </div>
           <div class="col-sm-12 mt-3">
             <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
-              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" />
+              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments"/>
           </div>
         </div>
         <div class="col-sm-7">
@@ -44,6 +44,14 @@ import Feedback from '@/components/Feedback.vue';
 import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
 import axios from 'axios';
+
+
+interface IdentifiedMoment {
+  quality: string;
+  timeOffset_start: number;
+  timeOffset_end: number;
+}
+
 
 export default {
   name: 'WebcamRecorder',
@@ -87,6 +95,7 @@ export default {
     const showLoader = ref<boolean>(false);
 
     const videoStream = ref<MediaStream | null>(null);
+    const identifiedMoments = ref<IdentifiedMoment[]>([])
 
     onMounted(() => {
       initListInstruction();
@@ -194,8 +203,9 @@ export default {
       const gptService = new GPTService();
       gptService.generateGptResponse(transcript.value, listSystemInstruction.value[idxInstruction.value++]).then(
         async (gptResponse) => {
-          const ttsResponseData = gptResponse[0];
-          const gptResponseText = gptResponse[1];
+          const ttsResponseData = gptResponse['audio_data'];
+          const gptResponseText = gptResponse['text_response'];
+          const identification = gptResponse['identification'];
 
           const audioContext = new AudioContext();
 
@@ -234,6 +244,12 @@ export default {
               timeOffset: timeNow,
               speaker: 'Assistant',
             });
+
+            if (identification['quality']=='need improvement'){
+              identification['timeOffset_end'] = timeNow - 0.1;
+              identifiedMoments.value.push(identification);
+              console.log(identifiedMoments.value)
+            }
           });
           
         }
@@ -406,6 +422,7 @@ export default {
       setHighlightTranscript,
       handleTranscriptClick,
       updateCurrentVideoSeekTime,
+      identifiedMoments
     };
   },
 };

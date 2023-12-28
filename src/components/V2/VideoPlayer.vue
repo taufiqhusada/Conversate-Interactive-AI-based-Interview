@@ -11,10 +11,10 @@
       <div class="seekBar" ref="seekBarRef" @click="seekAudio($event)">
         <div class="progress" :style="{ width: progress + '%'}"></div>
         <!-- Timestamp marks --> 
-        <div v-for="(timestamp, index) in suggestedTimestamps" :key="index"
+        <div v-for="(data, index) in identifiedMoments" :key="index"
              class="timestampMark"
-             :style="{ left: calculateTimestampPosition(timestamp[0]) + '%', 
-                       width: calculateTimestampWidth(timestamp[0], timestamp[1]) + '%' }"></div>
+             :style="{ left: calculateTimestampPosition(data['timeOffset_start']) + '%', 
+                       width: calculateTimestampWidth(data['timeOffset_start'],data['timeOffset_end']) + '%' }"></div>
       </div>
     </div>
   </div>
@@ -22,6 +22,14 @@
 
 <script lang="ts">
 import { ref, defineComponent, onMounted, watch, computed } from 'vue';
+
+
+interface IdentifiedMoment {
+  quality: string;
+  timeOffset_start: number;
+  timeOffset_end: number;
+}
+
 
 export default defineComponent({
   props: {
@@ -31,15 +39,18 @@ export default defineComponent({
     clickedTranscriptTime: {
       type: Number,
     },
-    suggestedTimestamps: {
-      type: Array as () => Array<[number, number]>,
-      default: () => {
-        // Example: Array of timestamp pairs (start, end) in seconds
-        return [
-          [1, 2],
-          [4, 5],
-        ];
-      }
+    // suggestedTimestamps: {
+    //   type: Array as () => Array<[number, number]>,
+    //   default: () => {
+    //     // Example: Array of timestamp pairs (start, end) in seconds
+    //     return [
+    //       [1, 2],
+    //       [4, 5],
+    //     ];
+    //   }
+    // },
+    identifiedMoments: {
+      type: Array as () => Array<IdentifiedMoment>
     }
   },
   setup(props, context) {
