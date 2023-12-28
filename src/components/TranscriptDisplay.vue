@@ -5,9 +5,9 @@
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
         <div class="message-container">
           <div class="content">
-            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'User', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'Assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
           </div>
-          <div class="time"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
+          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>
       </div>
     </section>
@@ -24,6 +24,12 @@ interface TranscriptMessage {
   speaker: string;
 }
 
+interface IdentifiedMoment {
+  quality: string;
+  timeOffset_start: number;
+  timeOffset_end: number;
+}
+
 export default defineComponent({
   props: {
     transcript: {
@@ -37,6 +43,9 @@ export default defineComponent({
     currentVideoSeekTime: {
       type: Number,
       required: false
+    },
+    identifiedMoments: {
+      type: Array as () => Array<IdentifiedMoment>
     }
   },
   methods: {
@@ -147,12 +156,23 @@ export default defineComponent({
       // Handle the click event, you can perform actions here
       context.emit('transcript-clicked', message.timeOffset);
     };
+
+    const isTimeInIdentifiedMoment = (timeOffset: number) => {
+      if (props.identifiedMoments){
+        console.log("masuk", props.identifiedMoments)
+        return props.identifiedMoments.some(moment =>
+          timeOffset >= moment.timeOffset_start && timeOffset <= moment.timeOffset_end
+        );
+      }
+     
+    };
   
 
     return {
       chatArea,
       messageHighlight,
-      handleTranscriptClick
+      handleTranscriptClick,
+      isTimeInIdentifiedMoment
     };
   },
 });
@@ -167,7 +187,7 @@ export default defineComponent({
 .chat-area {
   border: 1px solid #ccc;
   background: white;
-  max-height: 27rem;
+  max-height: 70vh;
   padding: 1em;
   overflow: auto;
   max-width: 40rem;
@@ -240,5 +260,9 @@ export default defineComponent({
 
 .speaker-2 {
   color: #0d6efd; /* Text color for Speaker 2 */
+}
+
+.highlight-time {
+  color: rgb(255, 123, 0); 
 }
 </style>

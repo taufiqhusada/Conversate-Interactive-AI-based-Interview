@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <template v-if="!videoRecordingUrl">
+    <template v-if="!audioRecordingUrl">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
         <button class="btn btn-outline-primary m-2" @click="startVideo" v-if="!videoRecording && !showLoader">Start Session</button>
@@ -14,17 +14,17 @@
     </template>
     <template v-else>
       <div class="row">
-        <div class="col-sm-6">
+        <div class="col-sm-5">
           <div class="video-uploader-container">
-            <VideoPlayer :videoUrl="videoRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
-              :clickedTranscriptTime="clickedTranscriptTime"></VideoPlayer>
+            <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
+              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments"></VideoPlayer>
           </div>
           <div class="col-sm-12 mt-3">
             <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
-              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" />
+              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments"/>
           </div>
         </div>
-        <div class="col-sm-6">
+        <div class="col-sm-7">
           <Feedback :showAnnotationTextboxes="true" :transcript="transcript" :sessionID="sessionID"
             @highlight-transcript="setHighlightTranscript" />
         </div>
@@ -45,6 +45,14 @@ import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
 import axios from 'axios';
 
+
+interface IdentifiedMoment {
+  quality: string;
+  timeOffset_start: number;
+  timeOffset_end: number;
+}
+
+
 export default {
   name: 'WebcamRecorder',
   components: {
@@ -61,7 +69,7 @@ export default {
     const audioRecording = ref<boolean>(false);
     const videoRecordingFinished = ref<boolean>(false);
     const audioRecordingFinished = ref<boolean>(false);
-    const videoRecordingUrl = ref<string | null>(null);
+    const audioRecordingUrl = ref<string | null>(null);
     const videoMediaRecorder = ref<MediaRecorder | null>(null);
     const audioMediaRecorder = ref<MediaRecorder | null>(null);
     const videoStartTime = ref<Date | null>(null);
@@ -86,6 +94,9 @@ export default {
     const showSpeaker = ref<boolean>(false);
     const showLoader = ref<boolean>(false);
 
+    const videoStream = ref<MediaStream | null>(null);
+    const identifiedMoments = ref<IdentifiedMoment[]>([])
+
     onMounted(() => {
       initListInstruction();
       getMedia();
@@ -94,9 +105,10 @@ export default {
     const initListInstruction = () => {
       listQuestions.value = [
         "Tell me about yourself?",
-        "Tell me about your past related experience?",
-        "What is your strength?",
-        "What is your weakness?",
+        "How has your previous education and experience prepared you for this job?",
+        "What do you consider to be your greatest strength and why?",
+        "What do you consider to be your greatest challenge (weakness)? How are you going about improving up on it?",
+        "Describe a time when you used teamwork to achieve a goal. What was your role and the resulting outcome?"
       ];
 
       const concatenatedListQuestion = listQuestions.value.join(',');
@@ -116,7 +128,7 @@ export default {
 
         for (let cnt = 0; cnt < depthFollowUpQuestion; ++cnt) {
           listSystemInstruction.value[j++] =
-            `As an interviewer ask a follow-up question based on the user previous answers and based on your previous question. Your follow-up question cannot be similar to the questions on this list [${concatenatedListQuestion}] and cannot be the same as your previous questions`;
+            `As an interviewer ask a relevant follow-up question to the job based on the user previous answers and based on your previous question. Your follow-up question CANNOT BE SIMILAR TO THE QUESTIONS ON THIS LIST [${concatenatedListQuestion}] and cannot be the same as your previous questions`;
         }
       }
       listSystemInstruction.value[listSystemInstruction.value.length - 1] =
@@ -125,13 +137,19 @@ export default {
 
     const getMedia = async () => {
       try {
-        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true  });
+        videoStream.value = await navigator.mediaDevices.getUserMedia({ video: true, audio: true  });
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
+        const audioOnlyStream = new MediaStream();
+          videoStream.value.getAudioTracks().forEach((audioTrack) => {
+            audioOnlyStream.addTrack(audioTrack);
+        });
+
+
         if (videoElement.value) {
-          videoElement.value.srcObject = videoStream;
+          videoElement.value.srcObject = videoStream.value;
         }
-        videoMediaRecorder.value = new MediaRecorder(videoStream);
+        videoMediaRecorder.value = new MediaRecorder(audioOnlyStream);
         audioMediaRecorder.value = new MediaRecorder(audioStream);
 
         videoMediaRecorder.value.onstart = async () => {
@@ -155,12 +173,13 @@ export default {
             const gptService = new GPTService();
             gptService.getTranscriptFromWhisper(event.data).then((listTranscriptFromUser) => {
               console.log(listTranscriptFromUser)
+              const timeStartOffset = userAudioStartTimestamps.value[idxUserAudio.value++];
+
               listTranscriptFromUser.forEach((item) => {
-                const timeStartOffset = userAudioStartTimestamps.value[idxUserAudio.value++];
                 transcript.value.push({
                   text: item.text,
                   timeOffset: item.startTime + timeStartOffset,
-                  speaker: 'User',
+                  speaker: 'user',
                 });
               });
 
@@ -184,8 +203,9 @@ export default {
       const gptService = new GPTService();
       gptService.generateGptResponse(transcript.value, listSystemInstruction.value[idxInstruction.value++]).then(
         async (gptResponse) => {
-          const ttsResponseData = gptResponse[0];
-          const gptResponseText = gptResponse[1];
+          const ttsResponseData = gptResponse['audio_data'];
+          const gptResponseText = gptResponse['text_response'];
+          const identification = gptResponse['identification'];
 
           const audioContext = new AudioContext();
 
@@ -222,8 +242,14 @@ export default {
             transcript.value.push({
               text: gptResponseText,
               timeOffset: timeNow,
-              speaker: 'Assistant',
+              speaker: 'assistant',
             });
+
+            if (identification['quality']=='need improvement'){
+              identification['timeOffset_end'] = timeNow - 0.1;
+              identifiedMoments.value.push(identification);
+              console.log(identifiedMoments.value)
+            }
           });
           
         }
@@ -260,6 +286,12 @@ export default {
             audioTracks.forEach((track) => track.stop());
           }
         }
+
+        if (videoStream.value) {
+          const tracks = videoStream.value.getTracks();
+          tracks.forEach((track) => track.stop());
+          videoStream.value = null;
+        }
       }
     };
 
@@ -291,12 +323,12 @@ export default {
       return -1;
     };
 
-    const mergeVideoAndAudio = async (videoBlob: Blob) => {
+    const mergeVideoAndAudio = async (userAudioBlob: Blob) => {
       showLoader.value = true;
       console.log('merging');
       // Create a FormData object to send the video file
       const formData = new FormData();
-      formData.append('video', videoBlob);
+      formData.append('user_audio', userAudioBlob);
       for (let i = 0; i < responseAudios.value.length; i++) {
         formData.append('audio', responseAudios.value[i]);
       }
@@ -330,7 +362,7 @@ export default {
 
           showLoader.value = false;
 
-          videoRecordingUrl.value = mergedVideoUrl;
+          audioRecordingUrl.value = mergedVideoUrl;
 
           console.log('Merged video is ready to download');
         } else {
@@ -361,7 +393,7 @@ export default {
       audioRecording,
       videoRecordingFinished,
       audioRecordingFinished,
-      videoRecordingUrl,
+      audioRecordingUrl,
       videoMediaRecorder,
       audioMediaRecorder,
       videoStartTime,
@@ -390,6 +422,7 @@ export default {
       setHighlightTranscript,
       handleTranscriptClick,
       updateCurrentVideoSeekTime,
+      identifiedMoments
     };
   },
 };

@@ -64,7 +64,7 @@ export default class GPTService {
             const gptResponse = await axios.post(apiURL, requestData);
 
             console.log(gptResponse)
-            return [gptResponse.data['audio_data'], gptResponse.data['text_response']];
+            return gptResponse.data;
         } catch (error) {
             console.error('Error generating GPT response:', error);
             return '';
