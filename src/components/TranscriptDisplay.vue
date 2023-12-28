@@ -5,7 +5,7 @@
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
         <div class="message-container">
           <div class="content">
-            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'User', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'Assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
           </div>
           <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>

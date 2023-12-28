@@ -179,7 +179,7 @@ export default {
                 transcript.value.push({
                   text: item.text,
                   timeOffset: item.startTime + timeStartOffset,
-                  speaker: 'User',
+                  speaker: 'user',
                 });
               });
 
@@ -242,7 +242,7 @@ export default {
             transcript.value.push({
               text: gptResponseText,
               timeOffset: timeNow,
-              speaker: 'Assistant',
+              speaker: 'assistant',
             });
 
             if (identification['quality']=='need improvement'){
