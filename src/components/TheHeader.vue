@@ -22,7 +22,7 @@
     <div class="container">
       <a class="navbar-brand d-flex align-items-center" href="#">
         <img src="/images/minimalist_interview_logo.png" width="40" height="40" class="d-inline-block align-top rounded-circle" alt="">
-        <b class="site-title">Practice, Reflect, and Repeat</b>
+        <b class="site-title">Interview Simulation and Reflection</b>
       </a>
     </div>
   </nav>

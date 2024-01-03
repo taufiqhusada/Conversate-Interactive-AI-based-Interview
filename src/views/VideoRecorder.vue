@@ -3,11 +3,16 @@
     <template v-if="!audioRecordingUrl">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
-        <button class="btn btn-outline-primary m-2" @click="startVideo" v-if="!videoRecording && !showLoader">Start Session</button>
-        <button class="btn btn-outline-primary m-2" @click="stopVideo" v-if="videoRecording && !showLoader && !showSpeaker">Stop Session</button>
-        <button class="btn btn-outline-primary m-2" @click="startAudio" v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker">Start
-          Audio</button>
-        <button class="btn btn-outline-primary m-2" @click="stopAudio" v-if="audioRecording && !showLoader && !showSpeaker">Stop Recording</button>
+        <button class="btn btn-outline-primary mt-4" @click="startVideo" v-if="!videoRecording && !showLoader">Start Interview Session</button>
+       
+        <button class="click-to-talk-button mt-4" @click="startAudio" v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker && (idxInstruction < listSystemInstruction.length)">
+          <img src="/images/mic.png" alt="Microphone Icon" class="microphone-icon" />
+          Click to Talk
+        </button>
+        <button class="button-recording mt-4" @click="stopAudio" v-if="audioRecording && !showLoader && !showSpeaker">Recording</button>
+       
+        <br>
+        <button class="btn btn-outline-danger mt-4" @click="stopVideo" v-if="videoRecording && !showLoader && !showSpeaker && !audioRecording">Stop Session</button>
         <Speaker v-if="showSpeaker"></Speaker>
         <Loader v-if="showLoader"></Loader>
       </div>
@@ -462,5 +467,64 @@ export default {
 .webcam {
   border-radius: 5%;
   max-height: 20rem;
+}
+
+.click-to-talk-button {
+  /* display: flex; */
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  background-color: white; /* Match this color to the color from your screenshot */
+  border: 10px black;
+  border-radius: 25px; /* This creates a rounded button, adjust as needed */
+  font-size: 16px;
+  color: rgb(0, 0, 136); /* Match this color to the color from your screenshot */
+  cursor: pointer;
+  outline: black;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adjust shadow to match screenshot */
+  transition: background-color 0.3s;
+}
+
+.click-to-talk-button img {
+  margin-right: 10px;
+}
+
+.click-to-talk-button:hover {
+  background-color: #dfe7f9; /* Slightly darker color on hover */
+}
+
+.microphone-icon {
+  /* Adjust the width and height to make the microphone icon smaller */
+  width: 18px; /* Smaller width */
+  height: 18px; /* Smaller height */
+  margin-right: 8px;
+}
+
+.button-recording {
+	width: 35px;
+	height: 35px;
+	font-size: 0;
+	background-color: red;
+	border: 0;
+	border-radius: 35px;
+	margin: 18px;
+	outline: none;
+
+  animation-name: pulse;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+}
+
+@keyframes pulse{
+	0%{
+		box-shadow: 0px 0px 5px 0px rgba(173,0,0,.3);
+	}
+	65%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,.3);
+	}
+	90%{
+		box-shadow: 0px 0px 5px 13px rgba(173,0,0,0);
+	}
 }
 </style>
