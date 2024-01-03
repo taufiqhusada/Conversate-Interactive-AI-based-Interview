@@ -4,11 +4,11 @@ import Main from '@/views/Main.vue';
 
 const routes = [
   {
-    path: '/',
+    path: '/uploader',
     name: 'Main',
     component: Main,
   }, {
-    path: '/recorder',
+    path: '/',
     name: 'VideoRecorder',
     component: VideoRecorder,
   },
