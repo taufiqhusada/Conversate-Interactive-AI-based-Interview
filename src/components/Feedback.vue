@@ -26,6 +26,7 @@
             </div>
             <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
             <datalist id="commentOptions">
+                <option value="I am not giving enough example"></option>
                 <option value="I am good at answering the interview question"></option>
                 <option value="I am bad at answering the interview question"></option>
                 <option value="There is some good and bad part when I answer this interview question"></option>
@@ -222,9 +223,9 @@ export default defineComponent({
                 isTyping: false,
                 dropdownItems: [
                     'How to improve this part?',
+                    'Could you give me example how to answer this using STAR method?',
                     'How is my performance on this part?',
                     'Could you give me example how to answer this better?',
-                    'Could you give me example how to answer this using STAR method?',
                     'What is good about this part?',
                 ] as string[]
             });
@@ -436,7 +437,7 @@ export default defineComponent({
                     this.startTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
                     this.$emit('pin-moment', true, this.currentVideoSeekTime)
                 } else {
-                    this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+                    this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime + 1)
                     this.$emit('pin-moment', false, this.currentVideoSeekTime)
                 }
             }
