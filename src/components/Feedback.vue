@@ -37,7 +37,7 @@
         </form>
         <div v-if="showChatbox" class="chat mt-3">
             <div class="contact">
-                <div class="name">Ask For Feedback</div>
+                <div class="name">Open Feedback Chat Window</div>
             </div>
             <div id="chat-messages" class="messages" ref="messages">
                 <div v-for="(message, index) in chatMessages" :key="index">
