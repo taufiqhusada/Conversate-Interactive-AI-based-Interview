@@ -63,12 +63,13 @@
             </div>
             <div class="input">
                 <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage"  ref="questionInputRef"/>
+                <button @click="sendMessage" class="btn btn-primary">Send</button>
                 <i class="fas fa-microphone" @click="toggleRecording" :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
 
-        <button @click="saveFormData" class="btn btn-primary mt-3 m-1">Save</button>
+        <button @click="saveFormData" class="btn btn-outline-primary mt-3 m-1">Save Session</button>
         <button @click="navigateBack" class="btn btn-secondary mt-3 m-1" :disabled="currentIndex === -1">Back</button>
         <button @click="navigateNext" class="btn btn-secondary mt-3 m-1"
             :disabled="savedData.length === 0 || currentIndex === savedData.length">Next</button>
@@ -153,6 +154,15 @@ export default defineComponent({
         },
 
         async sendMessage() {
+            if (this.isRecording) {
+                // Stop recording
+                if (this.recognition) {
+                    this.recognition.stop();
+                    this.recognition.onresult = null; // Remove the onresult event handler
+                    this.isRecording = false;
+                }
+            }
+
             if (this.question.trim() === '') {
                 return;
             }
@@ -715,4 +725,5 @@ input::placeholder {
   width: 16px; /* Or any other size */
   height: auto;
 }
+
 </style>
