@@ -134,7 +134,7 @@ export default defineComponent({
             currentIndex: -1,
             showChatbox: ref(false),
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
-            backendURL: import.meta.env.VITE_BACKEND_URL,
+            backendURL: '/api',
             isRecording: ref<boolean>(false),
             recognition: null as SpeechRecognition | null,
             isDropdownOpen: ref(false),

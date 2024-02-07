@@ -9,7 +9,7 @@ export async function postInterviewData(data: {
     video_link: string;
   }): Promise<void> {
 
-    let backendURL = import.meta.env.VITE_BACKEND_URL
+    let backendURL = '/api'
 
     const apiUrl = `${backendURL}/interviews`; // Replace with your API URL
   
@@ -32,7 +32,7 @@ export async function postInterviewTranscriptData(data: {
     transcript: any;
   }): Promise<void> {
 
-    let backendURL = import.meta.env.VITE_BACKEND_URL
+    let backendURL = '/api'
 
     const apiUrl = `${backendURL}/interviews/transcript`; // Replace with your API URL
   

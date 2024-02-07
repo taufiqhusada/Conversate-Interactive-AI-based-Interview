@@ -87,7 +87,7 @@ export default {
     const responseStartTimestamps = ref<number[]>([]);
     const idxUserAudio = ref<number>(0);
     const responseAudios = ref<Blob[]>([]);
-    const backendURL = import.meta.env.VITE_BACKEND_URL as string;
+    const backendURL = '/api';
 
     const transcript = ref<any[]>([]);
     const sessionID = ref<string>('');
