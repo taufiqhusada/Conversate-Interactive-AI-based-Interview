@@ -24,7 +24,7 @@
                     </div>
                 </div>
             </div>
-            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
+            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Self Assesment / Comment" list="commentOptions">
             <datalist id="commentOptions">
                 <option value="I am not giving enough example"></option>
                 <option value="I am good at answering the interview question"></option>
@@ -32,12 +32,11 @@
                 <option value="There is some good and bad part when I answer this interview question"></option>
                 <option value="I am not sure about my performance in this part"></option>
             </datalist>
-            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Ask
-                Feedback</button>
+            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Open Feedback Chat Window</button>
         </form>
         <div v-if="showChatbox" class="chat mt-3">
             <div class="contact">
-                <div class="name">Open Feedback Chat Window</div>
+                <div class="name">Ask Feedback</div>
             </div>
             <div id="chat-messages" class="messages" ref="messages">
                 <div v-for="(message, index) in chatMessages" :key="index">
