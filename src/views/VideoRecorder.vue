@@ -3,6 +3,9 @@
     <template v-if="!audioRecordingUrl">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
+        <QuestionWindow v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker" class="d-flex justify-content-center mt-5" :questions="listQuestions" :currentIndex="Math.floor((idxInstruction-1)/(depthFollowUpQuestion+1))"></QuestionWindow>
+       
+        <input v-if="!videoRecording" type="text" class="form-control input-job text-center mt-4" v-model="inputJob" placeholder="Input Job Title that You Want to Apply">
         <button class="btn btn-outline-primary mt-4" @click="startVideo" v-if="!videoRecording && !showLoader">Start Interview Session</button>
        
         <button class="click-to-talk-button mt-4" @click="startAudio" v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker && (idxInstruction < listSystemInstruction.length)">
@@ -49,6 +52,7 @@ import Feedback from '@/components/Feedback.vue';
 import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
 import axios from 'axios';
+import QuestionWindow from '@/components/V2/questionWindow.vue'
 
 
 interface IdentifiedMoment {
@@ -65,7 +69,8 @@ export default {
     TranscriptDisplay,
     Feedback,
     Speaker,
-    Loader
+    Loader,
+    QuestionWindow
   },
   setup() {
     const videoElement = ref<HTMLVideoElement | null>(null);
@@ -94,7 +99,7 @@ export default {
     const listQuestions = ref<string[]>([]);
     const listSystemInstruction = ref<string[]>([]);
     const idxInstruction = ref<number>(0);
-    const depthFollowUpQuestion = 2;
+    const depthFollowUpQuestion = 1;
 
     const showSpeaker = ref<boolean>(false);
     const showLoader = ref<boolean>(false);
@@ -106,9 +111,10 @@ export default {
     const pinnedEnd = ref<number>();
     const pinnedMoments =  ref<[number, number][]>([]);
 
+    const inputJob = ref<string>("");
+
 
     onMounted(() => {
-      initListInstruction();
       getMedia();
     });
 
@@ -118,6 +124,7 @@ export default {
         "How has your previous education and experience prepared you for this job?",
         "What do you consider to be your greatest strength and why?",
         "What do you consider to be your greatest challenge (weakness)? How are you going about improving up on it?",
+        "Describe a time when you used teamwork to achieve a goal. What was your role and the resulting outcome?"
       ];
 
       const concatenatedListQuestion = listQuestions.value.join(',');
@@ -129,8 +136,7 @@ export default {
       for (let i = 0; i < listQuestions.value.length; i++) {
         if (i === 0) {
           listSystemInstruction.value[j++] =
-            "You have a role as an interviewer for Behavioral Job Interview. Act naturally as an interviewer with a dynamic but still professional. Say 'Hi, nice to meet you' first, introduce yourself, your name is Mr Interviewer, then ask this first question as the first question for the interview: " +
-            listQuestions.value[0];
+            `You have a role as an interviewer for Behavioral Job Interview for job position '${inputJob.value}'. Act naturally as an interviewer with a dynamic but still professional. Say 'Hi, nice to meet you' first, introduce yourself as the Hiring Manager, then ask this first question as the first question for the interview: ${listQuestions.value[0]}`;
         } else {
           listSystemInstruction.value[j++] = `As an interviewer move to the next question (but still make the interaction smooth). Ask this question to the interviewee: '${listQuestions.value[i]}'`;
         }
@@ -142,6 +148,8 @@ export default {
       }
       listSystemInstruction.value[listSystemInstruction.value.length - 1] =
         "Now say that the interview process is over and thank you for the time";
+
+      console.log(listSystemInstruction)
     };
 
     const getMedia = async () => {
@@ -272,6 +280,7 @@ export default {
 
     const startVideo = () => {
       if (videoMediaRecorder.value) {
+        initListInstruction();
         videoMediaRecorder.value.start();
       }
     };
@@ -455,7 +464,8 @@ export default {
       pinnedStart,
       pinnedEnd,
       pinnedMoments,
-      handleSaveData
+      handleSaveData,
+      inputJob,
     };
   },
 };
@@ -465,7 +475,7 @@ export default {
 <style scoped>
 .webcam {
   border-radius: 5%;
-  max-height: 20rem;
+  max-height: 15rem;
 }
 
 .click-to-talk-button {
@@ -525,5 +535,13 @@ export default {
 	90%{
 		box-shadow: 0px 0px 5px 13px rgba(173,0,0,0);
 	}
+}
+
+.input-job{
+  max-width: 40vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
 }
 </style>
