@@ -4,25 +4,39 @@
         <form>
             <div class="form-group row mb-3">
                 <div class="col">
-                    <input v-model="startTimeHHMMSS" class="form-control" type="text" placeholder="Start Time (hh:mm:ss)">
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default pin-button" :class="{ 'pin-button-clicked': isPinStartClicked }" type="button" @click="getTime('start')">
+                                <img src="/images/pin.png" alt="Pin" class="pin-icon">
+                            </button>
+                        </span>
+                        <input type="text" class="form-control time-input" v-model="startTimeHHMMSS" placeholder="Start Time (hh:mm:ss)">
+                    </div>
                 </div>
                 <div class="col">
-                    <input v-model="endTimeHHMMSS" class="form-control" type="text" placeholder="End Time (hh:mm:ss)">
+                    <div class="input-group">
+                        <span class="input-group-btn">
+                            <button class="btn btn-default pin-button"  :class="{ 'pin-button-clicked': isPinEndClicked }" type="button" @click="getTime('end')">
+                                <img src="/images/pin.png" alt="Pin" class="pin-icon">
+                            </button>
+                        </span>
+                        <input type="text" class="form-control time-input" v-model="endTimeHHMMSS" placeholder="End Time (hh:mm:ss)">
+                    </div>
                 </div>
             </div>
-            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
+            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Self Assesment / Comment" list="commentOptions">
             <datalist id="commentOptions">
+                <option value="I am not giving enough example"></option>
                 <option value="I am good at answering the interview question"></option>
                 <option value="I am bad at answering the interview question"></option>
                 <option value="There is some good and bad part when I answer this interview question"></option>
                 <option value="I am not sure about my performance in this part"></option>
             </datalist>
-            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Ask
-                Feedback</button>
+            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Open Feedback Chat Window</button>
         </form>
         <div v-if="showChatbox" class="chat mt-3">
             <div class="contact">
-                <div class="name">Ask For Feedback</div>
+                <div class="name">Ask Feedback</div>
             </div>
             <div id="chat-messages" class="messages" ref="messages">
                 <div v-for="(message, index) in chatMessages" :key="index">
@@ -36,7 +50,7 @@
 
                         <div v-if="message.dropdownItems">
                             <div class="dropdown m-2" @click="toggleDropdown">
-                                <button class="btn btn-outline-dark">Select Suggestion</button>
+                                <button class="btn btn-outline-dark">Select Question</button>
                                 <div class="dropdown-menu" v-show="isDropdownOpen">
                                     <a v-for="(item, index) in message.dropdownItems" :key="index" class="dropdown-item" @click="selectDropdownItem(item)">{{ item }}</a>
                                 </div>
@@ -48,13 +62,14 @@
                 </div>
             </div>
             <div class="input">
-                <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage" />
+                <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage"  ref="questionInputRef"/>
+                <button @click="sendMessage" class="btn btn-primary">Send</button>
                 <i class="fas fa-microphone" @click="toggleRecording" :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
 
-        <button @click="saveFormData" class="btn btn-primary mt-3 m-1">Save</button>
+        <button @click="saveFormData" class="btn btn-outline-primary mt-3 m-1">Save Session</button>
         <button @click="navigateBack" class="btn btn-secondary mt-3 m-1" :disabled="currentIndex === -1">Back</button>
         <button @click="navigateNext" class="btn btn-secondary mt-3 m-1"
             :disabled="savedData.length === 0 || currentIndex === savedData.length">Next</button>
@@ -103,12 +118,17 @@ export default defineComponent({
         sessionID: {
             type: String,
             required: true,
+        },
+        currentVideoSeekTime: {
+            type: Number,
         }
     },
     data() {
         return {
             startTimeHHMMSS: '',
             endTimeHHMMSS: '',
+            prevStartTimeHHMMSS: '',
+            prevEndTimeHHMMSS: '',
             annotation: '',
             question: ref<string>(''),
             feedback: '',
@@ -117,10 +137,12 @@ export default defineComponent({
             currentIndex: -1,
             showChatbox: ref(false),
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
-            backendURL: import.meta.env.VITE_BACKEND_URL,
+            backendURL: '/api',
             isRecording: ref<boolean>(false),
             recognition: null as SpeechRecognition | null,
             isDropdownOpen: ref(false),
+            isPinStartClicked: ref(false),
+            isPinEndClicked: ref(false),
         };
     },
     methods: {
@@ -136,6 +158,15 @@ export default defineComponent({
         },
 
         async sendMessage() {
+            if (this.isRecording) {
+                // Stop recording
+                if (this.recognition) {
+                    this.recognition.stop();
+                    this.recognition.onresult = null; // Remove the onresult event handler
+                    this.isRecording = false;
+                }
+            }
+
             if (this.question.trim() === '') {
                 return;
             }
@@ -205,9 +236,9 @@ export default defineComponent({
                 isTyping: false,
                 dropdownItems: [
                     'How to improve this part?',
+                    'Could you give me example how to answer this using STAR method?',
                     'How is my performance on this part?',
                     'Could you give me example how to answer this better?',
-                    'Could you give me example how to answer this using STAR method?',
                     'What is good about this part?',
                 ] as string[]
             });
@@ -267,6 +298,15 @@ export default defineComponent({
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
+
+
+                        this.highlightTranscript()
+                        this.isPinEndClicked = false;
+                        this.isPinStartClicked = false;
+
+
+                        this.$emit('save-data', this.currentIndex)
+                     
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -291,6 +331,14 @@ export default defineComponent({
                         // Update the currentIndex to the last saved entry
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
+
+                        this.highlightTranscript()
+                        this.isPinEndClicked = false;
+                        this.isPinStartClicked = false;
+
+                        this.$emit('save-data', this.currentIndex)
+                        
+
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -326,6 +374,9 @@ export default defineComponent({
                 this.chatMessages = [] as ChatMessage[]
 
                 this.currentIndex++;
+                this.highlightTranscript()
+                this.isPinEndClicked = false;
+                this.isPinStartClicked = false;
             }
         },
         loadSavedData() {
@@ -356,7 +407,26 @@ export default defineComponent({
         async highlightTranscript() {
             if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)) {
                 // Emit the updated startTime and endTime to the parent component
-                this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+                const startTimeConverted = this.convertHHMMSSToSeconds(this.startTimeHHMMSS);
+                let endTimeConverted = this.convertHHMMSSToSeconds(this.endTimeHHMMSS);
+
+                this.isPinStartClicked = true;
+                if (startTimeConverted >= endTimeConverted){
+                    endTimeConverted = startTimeConverted + 1;
+                    this.isPinEndClicked = false;
+                    this.endTimeHHMMSS = "";
+                } else {
+                    this.isPinEndClicked = true;
+                }
+
+                this.$emit('highlight-transcript', [startTimeConverted, endTimeConverted]);
+            } else if (this.isValidTimeFormat(this.startTimeHHMMSS)){
+                const startTimeConverted = this.convertHHMMSSToSeconds(this.startTimeHHMMSS);
+                this.isPinStartClicked = true;
+                this.isPinEndClicked = false;
+                this.$emit('highlight-transcript', [startTimeConverted, startTimeConverted+1]);
+            } else {
+                this.$emit('highlight-transcript', [0, 0]);
             }
         },
 
@@ -384,6 +454,11 @@ export default defineComponent({
                         .join('')
 
                     this.question = t;
+
+                    const textInput = this.$refs.questionInputRef  as HTMLInputElement;
+                        if (textInput) {
+                            textInput.scrollLeft = textInput.scrollWidth;
+                        }
                 };
 
                 // // Event handler when speech recognition is stopped
@@ -394,8 +469,26 @@ export default defineComponent({
                 // Start recognition
                 this.recognition.start();
                 this.isRecording = true;
+
+                const textInput = this.$refs.questionInputRef  as HTMLInputElement;
+                if (textInput) {
+                    textInput.focus();
+                }
             }
         },
+
+
+        getTime(id: string){
+            if (this.currentVideoSeekTime) {
+                if (id=='start'){
+                    this.startTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime)
+                    this.$emit('pin-moment', true, this.currentVideoSeekTime)
+                } else {
+                    this.endTimeHHMMSS = this.convertSecondsToHHMMSS(this.currentVideoSeekTime + 1)
+                    this.$emit('pin-moment', false, this.currentVideoSeekTime)
+                }
+            }
+        }
     },
 
     watch: {
@@ -415,7 +508,7 @@ export default defineComponent({
 .contact {
     position: relative;
     padding-left: 2rem;
-    height: 4.5rem;
+    height: 3rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -432,7 +525,7 @@ export default defineComponent({
     flex-direction: column;
     justify-content: space-between;
     max-width: 100%;
-    height: 30rem;
+    height: 54vh;
     z-index: 2;
     box-sizing: border-box;
     border-radius: 1rem;
@@ -634,5 +727,44 @@ input::placeholder {
 /* Apply the animation to the chatbox */
 .message {
     animation: fadeIn 0.5s ease-in-out;
+}
+.input-group {
+  display: flex;
+  align-items: center;
+}
+
+.time-input {
+  flex-grow: 1;
+  border: none; /* Remove input border */
+}
+
+.input-group-btn {
+  padding: 0; /* Remove padding */
+  
+  border: none;
+    background-image: none;
+    padding: 0.1rem;
+    border-radius: 1.125rem;
+    box-shadow: 1px 2px 5px 1px rgba(0, 0, 0, 0.3);
+}
+
+.pin-button {
+  padding: 0.375rem 0.75rem;
+  margin-right: -1px;
+  border-top-left-radius: 1.125rem;
+  border-bottom-left-radius: 1.125rem;
+}
+
+.pin-button-clicked {
+    background-color: #ffeca2;
+}
+
+.pin-button:hover {
+  background-color: #e2e6ea; /* Slightly different background on hover/focus for feedback */
+}
+
+.pin-icon {
+  width: 16px; /* Or any other size */
+  height: auto;
 }
 </style>

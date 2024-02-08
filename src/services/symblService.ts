@@ -83,7 +83,7 @@ export default class SymblService {
   }
 }
 
-let backendURL = import.meta.env.VITE_BACKEND_URL
+let backendURL = '/api'
 
 async function postInterviewData(data: {
   sessionID: string;

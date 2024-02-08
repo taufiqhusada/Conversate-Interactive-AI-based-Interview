@@ -5,9 +5,9 @@
       <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
         <div class="message-container">
           <div class="content">
-            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1', 'speaker-2': message.speaker === 'Speaker 2' }"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
           </div>
-          <div class="time"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
+          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>
       </div>
     </section>
@@ -21,8 +21,13 @@ import { defineComponent, ref, watch } from 'vue';
 interface TranscriptMessage {
   text: string;
   timeOffset: number;
-  duration: number;
   speaker: string;
+}
+
+interface IdentifiedMoment {
+  quality: string;
+  timeOffset_start: number;
+  timeOffset_end: number;
 }
 
 export default defineComponent({
@@ -38,6 +43,9 @@ export default defineComponent({
     currentVideoSeekTime: {
       type: Number,
       required: false
+    },
+    identifiedMoments: {
+      type: Array as () => Array<IdentifiedMoment>
     }
   },
   methods: {
@@ -148,12 +156,23 @@ export default defineComponent({
       // Handle the click event, you can perform actions here
       context.emit('transcript-clicked', message.timeOffset);
     };
+
+    const isTimeInIdentifiedMoment = (timeOffset: number) => {
+      if (props.identifiedMoments){
+        console.log("masuk", props.identifiedMoments)
+        return props.identifiedMoments.some(moment =>
+          timeOffset >= moment.timeOffset_start && timeOffset <= moment.timeOffset_end
+        );
+      }
+     
+    };
   
 
     return {
       chatArea,
       messageHighlight,
-      handleTranscriptClick
+      handleTranscriptClick,
+      isTimeInIdentifiedMoment
     };
   },
 });
@@ -168,7 +187,7 @@ export default defineComponent({
 .chat-area {
   border: 1px solid #ccc;
   background: white;
-  height: 33vh;
+  max-height: 77vh;
   padding: 1em;
   overflow: auto;
   max-width: 40rem;
@@ -196,7 +215,7 @@ export default defineComponent({
   padding: .5em;
   margin-bottom: .5em;
   margin-top: .5em;
-  font-size: .8em;
+  font-size: .9em;
   text-align: left;
 }
 
@@ -214,6 +233,7 @@ export default defineComponent({
 .highlight-seek-time {
   --tw-text-opacity: 1;
   background: rgb(250, 200, 200);
+  /* background: var(--tw-bg-opacity, rgba(255, 236, 162, var(--tw-bg-opacity, 1))); Background color from .highlight */
   /* Highlight color */
   /* Add other
    styles for highlighting */
@@ -241,5 +261,9 @@ export default defineComponent({
 
 .speaker-2 {
   color: #0d6efd; /* Text color for Speaker 2 */
+}
+
+.highlight-time {
+  color: rgb(255, 123, 0); 
 }
 </style>
