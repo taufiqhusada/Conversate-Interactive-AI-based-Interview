@@ -4,7 +4,7 @@
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
         <QuestionWindow v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker && ((idxInstruction-1) % (depthFollowUpQuestion+1) == 0)" class="d-flex justify-content-center mt-5" :questions="listQuestions" :currentIndex="Math.floor((idxInstruction-1)/(depthFollowUpQuestion+1))"></QuestionWindow>
        
-        <input v-if="!videoRecording && !showLoader" type="text" class="form-control input-job text-center mt-4" v-model="inputJob" placeholder="Input Job Title that You Want to Apply">
+        <input v-if="!videoRecording && !showLoader" type="text" class="form-control input-job text-center mt-4" v-model="inputJob" placeholder="Input the Job Title You Want to Apply for">
         <button class="btn btn-outline-primary mt-4" @click="startVideo" v-if="!videoRecording && !showLoader">Start Interview Session</button>
        
         <button class="click-to-talk-button mt-4" @click="startAudio" v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker && (idxInstruction < listSystemInstruction.length)">
@@ -336,6 +336,7 @@ export default {
           await postInterviewTranscriptData({
             sessionID: sessionID.value,
             transcript: transcript.value,
+            identifiedMoments: identifiedMoments.value,
           });
 
           showLoader.value = false;
