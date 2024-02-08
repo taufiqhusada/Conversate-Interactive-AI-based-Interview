@@ -336,6 +336,7 @@ export default {
           await postInterviewTranscriptData({
             sessionID: sessionID.value,
             transcript: transcript.value,
+            identifiedMoments: identifiedMoments.value,
           });
 
           showLoader.value = false;

@@ -29,7 +29,8 @@ export async function postInterviewData(data: {
 
 export async function postInterviewTranscriptData(data: {
     sessionID: string;
-    transcript: any;
+    transcript: any,
+    identifiedMoments: any[];
   }): Promise<void> {
 
     let backendURL = '/api'

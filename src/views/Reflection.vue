@@ -86,6 +86,7 @@ export default {
           // Update the reactive variables with the fetched data
           audioRecordingUrl.value = retrievedData.interview.video_link;
           transcript.value = retrievedData.transcript;
+          identifiedMoments.value = retrievedData.identifiedMoments;
 
           console.log("audioRecordingUrl", audioRecordingUrl.value)
         }
