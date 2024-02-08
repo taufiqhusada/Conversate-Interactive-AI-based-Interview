@@ -48,3 +48,25 @@ export async function postInterviewTranscriptData(data: {
       console.error('Error while sending data:', error);
     }
   }
+
+  export async function getAllData(
+    sessionID: string
+  ) {
+
+    let backendURL = '/api'
+
+    const apiUrl = `${backendURL}/retrieve/${sessionID}`; // Replace with your API URL
+  
+    try {
+      const response = await axios.get(apiUrl);
+      console.log(response)
+  
+      if (response.status === 200) {
+        return response.data
+      } else {
+        console.error('Failed to send data:', response.status, response.data);
+      }
+    } catch (error) {
+      console.error('Error while sending data:', error);
+    }
+  }

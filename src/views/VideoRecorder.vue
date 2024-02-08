@@ -1,6 +1,5 @@
 <template>
   <div class="container">
-    <template v-if="!audioRecordingUrl">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
         <QuestionWindow v-if="!audioRecording && videoRecording && !showLoader && !showSpeaker && ((idxInstruction-1) % (depthFollowUpQuestion+1) == 0)" class="d-flex justify-content-center mt-5" :questions="listQuestions" :currentIndex="Math.floor((idxInstruction-1)/(depthFollowUpQuestion+1))"></QuestionWindow>
@@ -19,41 +18,19 @@
         <Speaker v-if="showSpeaker"></Speaker>
         <Loader v-if="showLoader"></Loader>
       </div>
-    </template>
-    <template v-else>
-      <div class="video-uploader-container">
-            <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
-              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments" :pinnedStart="pinnedStart" :pinnedEnd="pinnedEnd" :pinnedMoments="pinnedMoments"></VideoPlayer>
-      </div>
-      <div class="row">
-        <div class="col-sm-4">
-          <div class="col-sm-12 mt-3">
-            <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
-              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments"/>
-          </div>
-        </div>
-        <div class="col-sm-8">
-          <Feedback :showAnnotationTextboxes="true" :transcript="transcript" :sessionID="sessionID"
-            @highlight-transcript="setHighlightTranscript" :currentVideoSeekTime="currentVideoSeekTime" @pin-moment="setPinMoment" @save-data="handleSaveData"/>
-        </div>
-      </div>
-    </template>
   </div>
 </template>
-
 <script lang="ts">
 import { ref, onMounted } from 'vue';
 import GPTService from '@/services/gptService'; // Import your GPT service
 import { postInterviewData, postInterviewTranscriptData } from '@/services/backendService'; // Import your API services
 import { v4 as uuidv4 } from 'uuid';
-import VideoPlayer from '@/components/V2/VideoPlayer.vue';
-import TranscriptDisplay from '@/components/TranscriptDisplay.vue';
-import Feedback from '@/components/Feedback.vue';
+import axios from 'axios';
+import QuestionWindow from '@/components/V2/questionWindow.vue';
+import Cookies from 'js-cookie';
+import router from '@/router';
 import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
-import axios from 'axios';
-import QuestionWindow from '@/components/V2/questionWindow.vue'
-
 
 interface IdentifiedMoment {
   quality: string;
@@ -61,20 +38,15 @@ interface IdentifiedMoment {
   timeOffset_end: number;
 }
 
-
 export default {
   name: 'WebcamRecorder',
   components: {
-    VideoPlayer,
-    TranscriptDisplay,
-    Feedback,
+    QuestionWindow,
     Speaker,
     Loader,
-    QuestionWindow
   },
   setup() {
     const videoElement = ref<HTMLVideoElement | null>(null);
-    
     const videoRecording = ref<boolean>(false);
     const audioRecording = ref<boolean>(false);
     const videoRecordingFinished = ref<boolean>(false);
@@ -88,31 +60,19 @@ export default {
     const idxUserAudio = ref<number>(0);
     const responseAudios = ref<Blob[]>([]);
     const backendURL = '/api';
-
     const transcript = ref<any[]>([]);
     const sessionID = ref<string>('');
-    const timestampHighlightsData = ref<[number, number][]>([]);
-    const transcriptLoading = ref<boolean>(false);
-    const currentVideoSeekTime = ref<number>(0);
-    const clickedTranscriptTime = ref<number>(0);
-
     const listQuestions = ref<string[]>([]);
     const listSystemInstruction = ref<string[]>([]);
     const idxInstruction = ref<number>(0);
     const depthFollowUpQuestion = 1;
-
     const showSpeaker = ref<boolean>(false);
     const showLoader = ref<boolean>(false);
-
     const videoStream = ref<MediaStream | null>(null);
-    const identifiedMoments = ref<IdentifiedMoment[]>([])
-
     const pinnedStart = ref<number>();
     const pinnedEnd = ref<number>();
-    const pinnedMoments =  ref<[number, number][]>([]);
-
     const inputJob = ref<string>("");
-
+    const identifiedMoments = ref<IdentifiedMoment[]>([])
 
     onMounted(() => {
       getMedia();
@@ -382,6 +342,12 @@ export default {
 
           audioRecordingUrl.value = mergedVideoUrl;
 
+          if ( sessionID.value){
+            Cookies.set('sessionID', sessionID.value);
+            router.push('/reflection');
+          }
+         
+
           console.log('Merged video is ready to download');
         } else {
           console.error('Failed to merge video file.');
@@ -391,38 +357,6 @@ export default {
         alert("error" + error);
       }
     };
-
-    const setHighlightTranscript = (data: [number, number]) => {
-      timestampHighlightsData.value = [];
-      timestampHighlightsData.value.push(data);
-    };
-
-    const handleTranscriptClick = (time: number) => {
-      clickedTranscriptTime.value = time;
-    };
-
-    const updateCurrentVideoSeekTime = (seekTime: number) => {
-      currentVideoSeekTime.value = seekTime;
-    };
-
-    const setPinMoment = (isStart: boolean, time: number) => {
-      if (isStart){
-        pinnedStart.value = time
-      } else {
-        pinnedEnd.value = time
-      }
-    }
-
-    const handleSaveData = (currentIndex: number) => {
-      if (pinnedStart.value && pinnedEnd.value){
-        if (currentIndex >= 0 && currentIndex < pinnedMoments.value.length) {
-          pinnedMoments.value[currentIndex] = [pinnedStart.value, pinnedEnd.value]
-        }
-        else {
-          pinnedMoments.value.push([pinnedStart.value, pinnedEnd.value])
-        }
-      }
-    }
 
     return {
       videoElement,
@@ -441,10 +375,6 @@ export default {
       backendURL,
       transcript,
       sessionID,
-      timestampHighlightsData,
-      transcriptLoading,
-      currentVideoSeekTime,
-      clickedTranscriptTime,
       listQuestions,
       listSystemInstruction,
       idxInstruction,
@@ -456,15 +386,6 @@ export default {
       startAudio,
       stopAudio,
       getTimeElapsed,
-      setHighlightTranscript,
-      handleTranscriptClick,
-      updateCurrentVideoSeekTime,
-      identifiedMoments,
-      setPinMoment,
-      pinnedStart,
-      pinnedEnd,
-      pinnedMoments,
-      handleSaveData,
       inputJob,
     };
   },
