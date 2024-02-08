@@ -299,7 +299,14 @@ export default defineComponent({
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
 
+
+                        this.highlightTranscript()
+                        this.isPinEndClicked = false;
+                        this.isPinStartClicked = false;
+
+
                         this.$emit('save-data', this.currentIndex)
+                     
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -325,7 +332,13 @@ export default defineComponent({
                         this.currentIndex = this.savedData.length;
                         this.showChatbox = false;
 
+                        this.highlightTranscript()
+                        this.isPinEndClicked = false;
+                        this.isPinStartClicked = false;
+
                         this.$emit('save-data', this.currentIndex)
+                        
+
                     } else {
                         console.error('Failed to save data:', response.status, response.data);
                     }
@@ -361,6 +374,9 @@ export default defineComponent({
                 this.chatMessages = [] as ChatMessage[]
 
                 this.currentIndex++;
+                this.highlightTranscript()
+                this.isPinEndClicked = false;
+                this.isPinStartClicked = false;
             }
         },
         loadSavedData() {
@@ -409,6 +425,8 @@ export default defineComponent({
                 this.isPinStartClicked = true;
                 this.isPinEndClicked = false;
                 this.$emit('highlight-transcript', [startTimeConverted, startTimeConverted+1]);
+            } else {
+                this.$emit('highlight-transcript', [0, 0]);
             }
         },
 
@@ -454,7 +472,6 @@ export default defineComponent({
 
                 const textInput = this.$refs.questionInputRef  as HTMLInputElement;
                 if (textInput) {
-                    console.log("focus")
                     textInput.focus();
                 }
             }
