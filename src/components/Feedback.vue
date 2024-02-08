@@ -24,7 +24,7 @@
                     </div>
                 </div>
             </div>
-            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Comment" list="commentOptions">
+            <input v-model="annotation" class="form-control form-control mb-3" type="text" placeholder="Self Assesment / Comment" list="commentOptions">
             <datalist id="commentOptions">
                 <option value="I am not giving enough example"></option>
                 <option value="I am good at answering the interview question"></option>
@@ -32,12 +32,11 @@
                 <option value="There is some good and bad part when I answer this interview question"></option>
                 <option value="I am not sure about my performance in this part"></option>
             </datalist>
-            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Ask
-                Feedback</button>
+            <button v-if="!showChatbox" @click="askGPT" class="btn btn-outline-secondary" type="button">Open Feedback Chat Window</button>
         </form>
         <div v-if="showChatbox" class="chat mt-3">
             <div class="contact">
-                <div class="name">Open Feedback Chat Window</div>
+                <div class="name">Ask Feedback</div>
             </div>
             <div id="chat-messages" class="messages" ref="messages">
                 <div v-for="(message, index) in chatMessages" :key="index">
@@ -64,12 +63,13 @@
             </div>
             <div class="input">
                 <input type="text" v-model="question" placeholder="Type your question here!" @keyup.enter="sendMessage"  ref="questionInputRef"/>
+                <button @click="sendMessage" class="btn btn-primary">Send</button>
                 <i class="fas fa-microphone" @click="toggleRecording" :class="{ 'recording': isRecording }">&#xf130;</i>
             </div>
         </div>
 
 
-        <button @click="saveFormData" class="btn btn-primary mt-3 m-1">Save</button>
+        <button @click="saveFormData" class="btn btn-outline-primary mt-3 m-1">Save Session</button>
         <button @click="navigateBack" class="btn btn-secondary mt-3 m-1" :disabled="currentIndex === -1">Back</button>
         <button @click="navigateNext" class="btn btn-secondary mt-3 m-1"
             :disabled="savedData.length === 0 || currentIndex === savedData.length">Next</button>
@@ -135,7 +135,7 @@ export default defineComponent({
             currentIndex: -1,
             showChatbox: ref(false),
             chatMessages: [] as ChatMessage[], // Define the type for chatMessages
-            backendURL: import.meta.env.VITE_BACKEND_URL,
+            backendURL: '/api',
             isRecording: ref<boolean>(false),
             recognition: null as SpeechRecognition | null,
             isDropdownOpen: ref(false),
@@ -154,6 +154,15 @@ export default defineComponent({
         },
 
         async sendMessage() {
+            if (this.isRecording) {
+                // Stop recording
+                if (this.recognition) {
+                    this.recognition.stop();
+                    this.recognition.onresult = null; // Remove the onresult event handler
+                    this.isRecording = false;
+                }
+            }
+
             if (this.question.trim() === '') {
                 return;
             }
@@ -716,4 +725,5 @@ input::placeholder {
   width: 16px; /* Or any other size */
   height: auto;
 }
+
 </style>

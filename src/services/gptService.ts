@@ -13,7 +13,7 @@ export default class GPTService {
     async getTranscriptFromWhisper(audioBlob: Blob) {
         try {
             // Replace 'YOUR_WHISPER_API_KEY' and 'YOUR_WHISPER_API_ENDPOINT' with your actual API key and endpoint
-            const backendURL = import.meta.env.VITE_BACKEND_URL;
+            const backendURL = '/api';
             const apiURL = `${backendURL}/simulation/transcript`
 
             // Create a FormData object to send the audio file
@@ -48,7 +48,7 @@ export default class GPTService {
     async generateGptResponse(transcript: Array<{ text: string, timeOffset: number, speaker: string }>, instruction: string) {
         try {
 
-            const backendURL = import.meta.env.VITE_BACKEND_URL;
+            const backendURL = '/api';
             const apiURL = `${backendURL}/simulation/response`
 
             // Define the request payload following the cURL example

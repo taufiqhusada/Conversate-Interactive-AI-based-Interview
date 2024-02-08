@@ -9,7 +9,7 @@ export async function postInterviewData(data: {
     video_link: string;
   }): Promise<void> {
 
-    let backendURL = import.meta.env.VITE_BACKEND_URL
+    let backendURL = '/api'
 
     const apiUrl = `${backendURL}/interviews`; // Replace with your API URL
   
@@ -32,7 +32,7 @@ export async function postInterviewTranscriptData(data: {
     transcript: any;
   }): Promise<void> {
 
-    let backendURL = import.meta.env.VITE_BACKEND_URL
+    let backendURL = '/api'
 
     const apiUrl = `${backendURL}/interviews/transcript`; // Replace with your API URL
   
@@ -41,6 +41,28 @@ export async function postInterviewTranscriptData(data: {
   
       if (response.status === 200) {
         console.log('transcript data saved successfully:', response.data);
+      } else {
+        console.error('Failed to send data:', response.status, response.data);
+      }
+    } catch (error) {
+      console.error('Error while sending data:', error);
+    }
+  }
+
+  export async function getAllData(
+    sessionID: string
+  ) {
+
+    let backendURL = '/api'
+
+    const apiUrl = `${backendURL}/retrieve/${sessionID}`; // Replace with your API URL
+  
+    try {
+      const response = await axios.get(apiUrl);
+      console.log(response)
+  
+      if (response.status === 200) {
+        return response.data
       } else {
         console.error('Failed to send data:', response.status, response.data);
       }
