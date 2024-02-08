@@ -233,6 +233,7 @@ export default defineComponent({
 .highlight-seek-time {
   --tw-text-opacity: 1;
   background: rgb(250, 200, 200);
+  /* background: var(--tw-bg-opacity, rgba(255, 236, 162, var(--tw-bg-opacity, 1))); Background color from .highlight */
   /* Highlight color */
   /* Add other
    styles for highlighting */

@@ -6,7 +6,7 @@
                 <div class="col">
                     <div class="input-group">
                         <span class="input-group-btn">
-                            <button class="btn btn-default pin-button" type="button" @click="getTime('start')">
+                            <button class="btn btn-default pin-button" :class="{ 'pin-button-clicked': isPinStartClicked }" type="button" @click="getTime('start')">
                                 <img src="/images/pin.png" alt="Pin" class="pin-icon">
                             </button>
                         </span>
@@ -16,7 +16,7 @@
                 <div class="col">
                     <div class="input-group">
                         <span class="input-group-btn">
-                            <button class="btn btn-default pin-button" type="button" @click="getTime('end')">
+                            <button class="btn btn-default pin-button"  :class="{ 'pin-button-clicked': isPinEndClicked }" type="button" @click="getTime('end')">
                                 <img src="/images/pin.png" alt="Pin" class="pin-icon">
                             </button>
                         </span>
@@ -127,6 +127,8 @@ export default defineComponent({
         return {
             startTimeHHMMSS: '',
             endTimeHHMMSS: '',
+            prevStartTimeHHMMSS: '',
+            prevEndTimeHHMMSS: '',
             annotation: '',
             question: ref<string>(''),
             feedback: '',
@@ -139,6 +141,8 @@ export default defineComponent({
             isRecording: ref<boolean>(false),
             recognition: null as SpeechRecognition | null,
             isDropdownOpen: ref(false),
+            isPinStartClicked: ref(false),
+            isPinEndClicked: ref(false),
         };
     },
     methods: {
@@ -387,7 +391,24 @@ export default defineComponent({
         async highlightTranscript() {
             if (this.isValidTimeFormat(this.startTimeHHMMSS) && this.isValidTimeFormat(this.endTimeHHMMSS)) {
                 // Emit the updated startTime and endTime to the parent component
-                this.$emit('highlight-transcript', [this.convertHHMMSSToSeconds(this.startTimeHHMMSS), this.convertHHMMSSToSeconds(this.endTimeHHMMSS)]);
+                const startTimeConverted = this.convertHHMMSSToSeconds(this.startTimeHHMMSS);
+                let endTimeConverted = this.convertHHMMSSToSeconds(this.endTimeHHMMSS);
+
+                this.isPinStartClicked = true;
+                if (startTimeConverted >= endTimeConverted){
+                    endTimeConverted = startTimeConverted + 1;
+                    this.isPinEndClicked = false;
+                    this.endTimeHHMMSS = "";
+                } else {
+                    this.isPinEndClicked = true;
+                }
+
+                this.$emit('highlight-transcript', [startTimeConverted, endTimeConverted]);
+            } else if (this.isValidTimeFormat(this.startTimeHHMMSS)){
+                const startTimeConverted = this.convertHHMMSSToSeconds(this.startTimeHHMMSS);
+                this.isPinStartClicked = true;
+                this.isPinEndClicked = false;
+                this.$emit('highlight-transcript', [startTimeConverted, startTimeConverted+1]);
             }
         },
 
@@ -717,6 +738,10 @@ input::placeholder {
   border-bottom-left-radius: 1.125rem;
 }
 
+.pin-button-clicked {
+    background-color: #ffeca2;
+}
+
 .pin-button:hover {
   background-color: #e2e6ea; /* Slightly different background on hover/focus for feedback */
 }
@@ -725,5 +750,4 @@ input::placeholder {
   width: 16px; /* Or any other size */
   height: auto;
 }
-
 </style>
