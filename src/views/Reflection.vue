@@ -113,6 +113,13 @@ export default {
     const setPinMoment = (isStart: boolean, time: number) => {
       if (isStart){
         pinnedStart.value = time
+
+        if (pinnedEnd.value){
+          if (pinnedStart.value > pinnedEnd.value){
+            pinnedEnd.value = undefined
+          }
+        }
+
       } else {
         pinnedEnd.value = time
       }
