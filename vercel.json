@@ -1,6 +1,6 @@
 {
     "rewrites": [
-        {"source": "/api/:path*", "destination": "https://backend-dp3thwrg2a-uk.a.run.app/:path*"},
+        {"source": "/api/:path*", "destination": "http://128.173.237.88:8000/:path*"},
         {"source": "/(.*)", "destination": "/"}
     ]
 }
