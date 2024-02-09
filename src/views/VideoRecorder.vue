@@ -397,7 +397,7 @@ export default {
 <style scoped>
 .webcam {
   border-radius: 5%;
-  max-height: 15rem;
+  max-height: 35vh;
 }
 
 .click-to-talk-button {
