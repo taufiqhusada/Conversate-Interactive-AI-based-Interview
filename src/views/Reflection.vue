@@ -80,16 +80,20 @@ export default {
       try {
         // Call the backend API to get audioRecording and transcript
         sessionID.value = Cookies.get("sessionID");
-        const retrievedData = await getAllData(sessionID.value);
+        const token = Cookies.get('keto')
+        if (token){
+          const retrievedData = await getAllData(token);
 
-        if (retrievedData){
-          // Update the reactive variables with the fetched data
-          audioRecordingUrl.value = retrievedData.interview.video_link;
-          transcript.value = retrievedData.transcript;
-          identifiedMoments.value = retrievedData.identifiedMoments;
+          if (retrievedData){
+            // Update the reactive variables with the fetched data
+            audioRecordingUrl.value = retrievedData.interview.video_link;
+            transcript.value = retrievedData.transcript;
+            identifiedMoments.value = retrievedData.identifiedMoments;
 
-          console.log("audioRecordingUrl", audioRecordingUrl.value)
+            console.log("audioRecordingUrl", audioRecordingUrl.value)
+          }
         }
+        
         
       } catch (error) {
         console.error('Error fetching audioRecording and transcript:', error);

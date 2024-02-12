@@ -7,7 +7,7 @@ export async function postInterviewData(data: {
     username_interviewee: string;
     transcript_link: string;
     video_link: string;
-  }): Promise<void> {
+  }) {
 
     let backendURL = '/api'
 
@@ -18,6 +18,7 @@ export async function postInterviewData(data: {
   
       if (response.status === 200) {
         console.log('interveiw data saved successfully:', response.data);
+        return response.data
       } else {
         console.error('Failed to send data:', response.status, response.data);
       }
@@ -50,24 +51,24 @@ export async function postInterviewTranscriptData(data: {
     }
   }
 
-  export async function getAllData(
-    sessionID: string
-  ) {
+export async function getAllData(token: string) {
+  let backendURL = '/api';
+  const apiUrl = `${backendURL}/retrieve`;
 
-    let backendURL = '/api'
-
-    const apiUrl = `${backendURL}/retrieve/${sessionID}`; // Replace with your API URL
-  
-    try {
-      const response = await axios.get(apiUrl);
-      console.log(response)
-  
-      if (response.status === 200) {
-        return response.data
-      } else {
-        console.error('Failed to send data:', response.status, response.data);
+  try {
+    const response = await axios.get(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token}` // Set the Authorization header with Bearer token
       }
-    } catch (error) {
-      console.error('Error while sending data:', error);
+    });
+    console.log(response);
+
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error('Failed to send data:', response.status, response.data);
     }
+  } catch (error) {
+    console.error('Error while sending data:', error);
   }
+}
