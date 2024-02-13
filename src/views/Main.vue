@@ -11,7 +11,7 @@
         </div>
         <div class="col-sm-12 mt-3">
           <TranscriptDisplay v-if="!transcriptLoading" :transcript="transcript" :timestampHighlights="timestampHighlightsData" :currentVideoSeekTime="currentVideoSeekTime"
-          @transcript-clicked="handleTranscriptClick"/>
+          @transcript-clicked="handleTranscriptClick" :isShowingMoments="false"/>
         </div>
       </div>
       <div class="col-sm-6">

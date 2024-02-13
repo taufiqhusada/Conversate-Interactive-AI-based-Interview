@@ -7,7 +7,7 @@
           <div class="content">
             <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
           </div>
-          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
+          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) && isShowingMoments }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>
       </div>
     </section>
@@ -46,6 +46,10 @@ export default defineComponent({
     },
     identifiedMoments: {
       type: Array as () => Array<IdentifiedMoment>
+    },
+    isShowingMoments : {
+      type: Boolean,
+      required: true
     }
   },
   methods: {
