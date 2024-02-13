@@ -2,7 +2,7 @@
   <div class="container">
     <div class="card text-center" style="width: 50vh;">
       <div class="card-header">
-        # {{ currentIndex+1 }} / {{ questions.length }} Main Questions
+        {{ currentIndex+1 }} / {{ questions.length }} Main Questions
       </div>
       <ul class="list-group list-group-flush">
         <li class="list-group-item">{{ questions[currentIndex] }}</li>
