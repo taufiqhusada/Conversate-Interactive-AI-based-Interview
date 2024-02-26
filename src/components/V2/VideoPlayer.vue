@@ -11,7 +11,7 @@
       <div class="seekBar" ref="seekBarRef" @click="seekAudio($event)" @mousedown="startDrag" @mousemove="dragging" @mouseup="endDrag">
         <div class="progress" :style="{ width: progress + '%'}"></div>
         <!-- Timestamp marks --> 
-        <div v-for="(data, index) in identifiedMoments" :key="index"
+        <div v-show="isShowingMoments" v-for="(data, index) in identifiedMoments" :key="index"
              class="timestampMark"
              :style="{ left: calculateTimestampPosition(data['timeOffset_start']) + '%', 
                        width: calculateTimestampWidth(data['timeOffset_start'],data['timeOffset_end']) + '%' }"></div>
@@ -34,6 +34,8 @@
              :style="{ left: calculateTimestampPosition(currentTime) - 0.2 + '%'}"></div>
 
       </div>
+      <button v-show="!isShowingMoments" class="btn btn-outline-primary" @click="showSuggestedMoments" style="margin-left: 19px;">  Show Suggested Moments</button>
+      <button v-show="isShowingMoments" class="btn btn-outline-primary" @click="unShowSuggestedMoments">Unshow Suggested Moments</button>
     </div>
   </div>
 </template>
@@ -89,6 +91,7 @@ export default defineComponent({
     const currentTime = ref(0);
     const seekBarWidth = ref(0);
     const isDragging = ref(false);
+    const isShowingMoments = ref(false);
 
     const updateSeekTime = () => {
       if (audioPlayerRef.value) {
@@ -187,6 +190,16 @@ export default defineComponent({
       isDragging.value = false;
     };
 
+    const showSuggestedMoments = () => {
+      isShowingMoments.value = true;
+      context.emit('show-suggested-moments', true);
+    }
+
+    const unShowSuggestedMoments = () => {
+      isShowingMoments.value = false;
+      context.emit('show-suggested-moments', false);
+    }
+
     onMounted(() => {
       audioPlayerRef.value.addEventListener('loadedmetadata', () => {
         duration.value = audioPlayerRef.value.duration;
@@ -224,6 +237,9 @@ export default defineComponent({
       startDrag,
       dragging,
       endDrag,
+      isShowingMoments,
+      showSuggestedMoments,
+      unShowSuggestedMoments
     };
   }
 });
@@ -256,7 +272,7 @@ audio:nth-child(6) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding: 5px;
   background-color: #fff;
   /* box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2); */
   box-shadow: 2px 2px 5px 2px rgba(0, 0, 0, 0.3);

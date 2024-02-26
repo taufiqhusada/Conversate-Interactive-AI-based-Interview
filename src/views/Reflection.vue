@@ -2,13 +2,14 @@
   <div class="container">
       <div v-if="audioRecordingUrl" class="video-uploader-container">
             <VideoPlayer :audioUrl="audioRecordingUrl" @video-seek-time-updated="updateCurrentVideoSeekTime"
-              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments" :pinnedStart="pinnedStart" :pinnedEnd="pinnedEnd" :pinnedMoments="pinnedMoments"></VideoPlayer>
+              :clickedTranscriptTime="clickedTranscriptTime" :identifiedMoments="identifiedMoments" :pinnedStart="pinnedStart" :pinnedEnd="pinnedEnd" :pinnedMoments="pinnedMoments"
+              @show-suggested-moments="toggleShowSuggestedMoments"></VideoPlayer>
       </div>
       <div class="row">
         <div class="col-sm-4">
           <div class="col-sm-12 mt-3">
             <TranscriptDisplay :transcript="transcript" :timestampHighlights="timestampHighlightsData"
-              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments"/>
+              :currentVideoSeekTime="currentVideoSeekTime" @transcript-clicked="handleTranscriptClick" :identifiedMoments="identifiedMoments" :isShowingMoments="isShowingMoments"/>
           </div>
         </div>
         <div class="col-sm-8">
@@ -70,6 +71,7 @@ export default {
     const pinnedMoments =  ref<[number, number][]>([]);
 
     const inputJob = ref<string>("");
+    const isShowingMoments = ref<boolean>(false);
 
 
     onMounted(() => {
@@ -90,7 +92,6 @@ export default {
             transcript.value = retrievedData.transcript;
             identifiedMoments.value = retrievedData.identifiedMoments;
 
-            console.log("audioRecordingUrl", audioRecordingUrl.value)
           }
         }
         
@@ -141,6 +142,10 @@ export default {
       }
     }
 
+    const toggleShowSuggestedMoments = (isShow: boolean) => {
+      isShowingMoments.value = isShow;
+    }
+
     return {
       backendURL,
       transcript,
@@ -160,6 +165,8 @@ export default {
       handleSaveData,
       inputJob,
       audioRecordingUrl,
+      toggleShowSuggestedMoments,
+      isShowingMoments
     };
   },
 };

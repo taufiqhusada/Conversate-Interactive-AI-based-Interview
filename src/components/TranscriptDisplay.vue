@@ -2,12 +2,15 @@
   <div v-if="transcript.length !== 0">
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
-      <div v-for="(message, index) in transcript" :key="index" :class="messageHighlight(message)" @click="handleTranscriptClick(message)" type="button">
+      <div v-for="(message, index) in transcript" :key="index" :class="[messageHighlight(message), { 'margin-right': message.speaker === 'assistant', 'margin-left': message.speaker === 'user'}]" @click="handleTranscriptClick(message)" type="button" >
         <div class="message-container">
           <div class="content">
-            <span :class="{ 'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}"><b>{{ message.speaker }}:</b></span> {{ message.text }}
+            <span :class="[{'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}]">
+              <b>{{ message.speaker }}:</b>
+            </span> 
+            {{ message.text }}
           </div>
-          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
+          <div class="time" :class="{ 'highlight-time': isTimeInIdentifiedMoment(message.timeOffset) && isShowingMoments }"><b>{{ convertTimeToHHMMSS(message.timeOffset) }}</b></div>
         </div>
       </div>
     </section>
@@ -46,6 +49,10 @@ export default defineComponent({
     },
     identifiedMoments: {
       type: Array as () => Array<IdentifiedMoment>
+    },
+    isShowingMoments : {
+      type: Boolean,
+      required: true
     }
   },
   methods: {
@@ -265,5 +272,13 @@ export default defineComponent({
 
 .highlight-time {
   color: rgb(255, 123, 0); 
+}
+
+.margin-right {
+  margin-right: 25px; /* Adjust margin as needed */
+}
+
+.margin-left {
+  margin-left: 25px; /* Adjust margin as needed */
 }
 </style>
