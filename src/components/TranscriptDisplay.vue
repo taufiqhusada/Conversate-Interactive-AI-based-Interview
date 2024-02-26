@@ -2,7 +2,7 @@
   <div v-if="transcript.length !== 0">
     <section ref="chatArea" class="chat-area">
       <h4 class="headline">Transcript</h4>
-      <div v-for="(message, index) in transcript" :key="index" :class="[messageHighlight(message), { 'margin-right': message.speaker === 'user', 'margin-left': message.speaker === 'assistant'}]" @click="handleTranscriptClick(message)" type="button" >
+      <div v-for="(message, index) in transcript" :key="index" :class="[messageHighlight(message), { 'margin-right': message.speaker === 'assistant', 'margin-left': message.speaker === 'user'}]" @click="handleTranscriptClick(message)" type="button" >
         <div class="message-container">
           <div class="content">
             <span :class="[{'speaker-1': message.speaker === 'Speaker 1' || message.speaker === 'user', 'speaker-2': message.speaker === 'Speaker 2' || message.speaker === 'assistant'}]">
