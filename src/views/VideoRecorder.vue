@@ -345,7 +345,7 @@ export default {
           audioRecordingUrl.value = mergedVideoUrl;
 
           if ( respPayload && sessionID.value){
-            Cookies.set('keto', respPayload.data.token, { expires: 120 / (24 * 60) });
+            Cookies.set('token', respPayload.data.token, { expires: 120 / (24 * 60) });
             Cookies.set('sessionID', sessionID.value,  { expires: 120 / (24 * 60) });
             router.push('/reflection');
           }

@@ -82,7 +82,7 @@ export default {
       try {
         // Call the backend API to get audioRecording and transcript
         sessionID.value = Cookies.get("sessionID");
-        const token = Cookies.get('keto')
+        const token = Cookies.get('token')
         if (token){
           const retrievedData = await getAllData(token);
 
