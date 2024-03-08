@@ -1,4 +1,5 @@
 <template>
+  <TheHeader></TheHeader>
   <div class="container">
       <div class="videoRecorderDiv text-center mt-5">
         <video class="webcam shadow" ref="videoElement" autoplay muted></video> <br>
@@ -31,6 +32,7 @@ import Cookies from 'js-cookie';
 import router from '@/router';
 import Speaker from '@/components/V2/Speaker.vue';
 import Loader from '@/components/loader.vue';
+import TheHeader from '@/components/TheHeader.vue';
 
 interface IdentifiedMoment {
   quality: string;
@@ -44,6 +46,7 @@ export default {
     QuestionWindow,
     Speaker,
     Loader,
+    TheHeader,
   },
   setup() {
     const videoElement = ref<HTMLVideoElement | null>(null);
