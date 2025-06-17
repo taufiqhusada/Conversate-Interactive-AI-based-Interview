@@ -2,7 +2,7 @@
 
 [![ArXiv Paper](https://img.shields.io/badge/arXiv-2410.05570-b31b1b.svg)](https://arxiv.org/abs/2410.05570)
 [![Conference Paper](https://img.shields.io/badge/Paper-ACM%20GROUP%202025-blue)](https://dl.acm.org/doi/pdf/10.1145/3701188)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 **Conversate** is a web-based application that supports reflective learning in job interview practice by leveraging Large Language Models (LLMs) for interactive interview simulations and dialogic feedback. This tool was developed as part of research published at **ACM GROUP 2025**.
 
@@ -155,7 +155,13 @@ python -m pytest             # Run tests (if available)
 - Database models: `src/database/models.py`
 - OpenAI configuration: `src/config/openai_connector.py`
 
-## 📊 Research & Publication
+## 📄 License & Usage
+
+This software is released under the **Apache License 2.0** to encourage open research and collaboration while ensuring proper attribution.
+
+### Academic Usage Requirements
+
+If you use this software in your research, please cite our paper:
 
 ```bibtex
 @article{daryanto2025conversate,
@@ -169,4 +175,14 @@ python -m pytest             # Run tests (if available)
   publisher={ACM New York, NY, USA}
 }
 ```
+
+## 📞 Contact
+
+For questions about the research, technical implementation, or licensing:
+
+- **Taufiq Daryanto** - taufiqhd@vt.edu
+- **Research Paper** - [https://arxiv.org/abs/2410.05570]
+- **ACM Digital Library** - [https://dl.acm.org/doi/pdf/10.1145/3701188]
+
+---
 
