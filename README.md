@@ -1,6 +1,6 @@
 # Conversate: Interactive AI-based Interview Training Tool
 
-[![Arxiv Paper](https://arxiv.org/abs/2410.05570)]
+[![ArXiv Paper](https://img.shields.io/badge/arXiv-2410.05570-b31b1b.svg)](https://arxiv.org/abs/2410.05570)
 [![Conference Paper](https://img.shields.io/badge/Paper-ACM%20GROUP%202025-blue)](https://dl.acm.org/doi/pdf/10.1145/3701188)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -158,11 +158,15 @@ python -m pytest             # Run tests (if available)
 ## 📊 Research & Publication
 
 ```bibtex
-@article{daryanto2024conversate,
+@article{daryanto2025conversate,
   title={Conversate: Supporting Reflective Learning in Interview Practice Through Interactive Simulation and Dialogic Feedback},
   author={Daryanto, Taufiq and Ding, Xiaohan and Wilhelm, Lance T and Stil, Sophia and Knutsen, Kirk McInnis and Rho, Eugenia H},
-  journal={arXiv preprint arXiv:2410.05570},
-  year={2024}
+  journal={Proceedings of the ACM on Human-Computer Interaction},
+  volume={9},
+  number={1},
+  pages={1--32},
+  year={2025},
+  publisher={ACM New York, NY, USA}
 }
 ```
 
