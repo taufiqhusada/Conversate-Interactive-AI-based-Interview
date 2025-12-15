@@ -10,7 +10,6 @@ from routes.videoProcessor import audio_processor_bp
 from routes.simulation import simulation_bp
 from routes.moment_identification import identification_bp
 from routes.retrieve_data import retrieve_data_bp
-from routes.file_upload import file_upload_bp
 
 from database.db import initialize_db
 from dotenv import load_dotenv
@@ -42,6 +41,4 @@ app.register_blueprint(audio_processor_bp)
 app.register_blueprint(simulation_bp)
 app.register_blueprint(identification_bp)
 app.register_blueprint(retrieve_data_bp)
-app.register_blueprint(file_upload_bp)
-
 
