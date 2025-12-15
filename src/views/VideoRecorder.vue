@@ -145,7 +145,7 @@ export default {
 
         videoMediaRecorder.value.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            mergeVideoAndAudio(event.data);
+            mergeAudioFiles(event.data);
           }
         };
 
@@ -305,9 +305,9 @@ export default {
       return -1;
     };
 
-    const mergeVideoAndAudio = async (userAudioBlob: Blob) => {
+    const mergeAudioFiles = async (userAudioBlob: Blob) => {
       showLoader.value = true;
-      console.log('merging');
+      console.log('merging audio files');
       // Create a FormData object to send the video file
       const formData = new FormData();
       formData.append('user_audio', userAudioBlob);
@@ -316,15 +316,20 @@ export default {
       }
       formData.append('start_times', JSON.stringify(responseStartTimestamps.value));
 
-      // Define the URL of your backend endpoint for video
-      const APIendpoint = `${backendURL}/video/merge`;
+      // Define the URL of your backend endpoint for audio merging
+      const APIendpoint = `${backendURL}/audio/merge`;
 
       try {
         const response =  await axios.post(APIendpoint, formData);
 
         if (response.status >= 200) {
-          console.log('Video file merged successfully.');
-          const mergedVideoUrl = response.data['data']['url'];
+          console.log('Audio files merged successfully.');
+          const mergedAudioUrl = response.data['data']['url'];
+          
+          // Prepend backend URL if the URL is relative
+          const fullMergedAudioUrl = mergedAudioUrl.startsWith('http') 
+            ? mergedAudioUrl 
+            : `${import.meta.env.VITE_BACKEND_URL}${mergedAudioUrl}`;
 
           let myuuid = uuidv4();
           sessionID.value = `${myuuid}_${Date.now()}`;
@@ -334,7 +339,7 @@ export default {
             username_interviewer: 'interviewer_username',
             username_interviewee: 'interviewee_username',
             transcript_link: 'none',
-            video_link: mergedVideoUrl,
+            video_link: fullMergedAudioUrl,
           });
 
 
@@ -346,7 +351,7 @@ export default {
 
           showLoader.value = false;
 
-          audioRecordingUrl.value = mergedVideoUrl;
+          audioRecordingUrl.value = fullMergedAudioUrl;
 
           if ( respPayload && sessionID.value){
             Cookies.set('keto', respPayload.data.token, { expires: 120 / (24 * 60) });
@@ -355,9 +360,9 @@ export default {
           }
          
 
-          console.log('Merged video is ready to download');
+          console.log('Merged audio is ready to play');
         } else {
-          console.error('Failed to merge video file.');
+          console.error('Failed to merge audio files.');
         }
       } catch (error) {
         console.error('Error:', error);

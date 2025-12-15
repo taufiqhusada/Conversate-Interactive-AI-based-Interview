@@ -30,8 +30,6 @@
 
 <script lang="ts">
 import { ref, defineComponent, onMounted, watch } from 'vue';
-import firebase from 'firebase/app';
-import 'firebase/storage';
 import SymblService from '@/services/symblService';
 
 export default defineComponent({
@@ -45,15 +43,25 @@ export default defineComponent({
     const videoPlayerRef = ref<HTMLVideoElement | null>(null);
     const fileProgress = ref<HTMLProgressElement | null>(null);
     const prevVideoSeekTime = ref<number>(0);
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
     const uploadTranscript = async (transcript: any[], sessionID: string) => {
-      const transcriptFileName = `${sessionID}.json`;
-
-      const storageRef = firebase.storage().ref(`transcripts/${transcriptFileName}`);
-      const transcriptBlob = new Blob([JSON.stringify(transcript)], { type: 'application/json' });
-
       try {
-        await storageRef.put(transcriptBlob);
+        const response = await fetch(`${backendUrl}/upload/transcript`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transcript,
+            sessionID
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload transcript');
+        }
+
         console.log('Transcript uploaded successfully');
       } catch (error) {
         console.error('Error uploading transcript:', error);
@@ -61,18 +69,16 @@ export default defineComponent({
     };
 
     const getTranscript = async (sessionID: string) => {
-      const transcriptFileName = `${sessionID}.json`;
-
-      const storageRef = firebase.storage().ref(`transcripts/${transcriptFileName}`);
-
       try {
-        const downloadURL = await storageRef.getDownloadURL();
-        const response = await fetch(downloadURL);
-        const transcript = await response.json();
+        const response = await fetch(`${backendUrl}/transcript/${sessionID}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to retrieve transcript');
+        }
 
+        const transcript = await response.json();
         console.log('Transcript retrieved successfully:', transcript);
 
-        // Do something with the transcript data, e.g., pass it to a component or perform further processing.
         return transcript;
       } catch (error) {
         console.error('Error retrieving transcript:', error);
@@ -92,29 +98,29 @@ export default defineComponent({
           return
         }
 
-        const fileName = `${file.name}_${Date.now()}`;
+        // Upload video using XMLHttpRequest for progress tracking
+        const formData = new FormData();
+        formData.append('video', file);
 
-        const storageRef = firebase.storage().ref(`videos/${fileName}`);
-        const uploadTask = storageRef.put(file);
+        const xhr = new XMLHttpRequest();
 
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            if (fileProgress.value) {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              fileProgress.value.value = progress;
-              fileProgress.value.getElementsByTagName('span')[0].innerText = Math.round(progress) + '%';
-            }
-          },
-          (error) => {
-            console.error('Error during upload:', error);
-          },
-          () => {
-            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable && fileProgress.value) {
+            const progress = (e.loaded / e.total) * 100;
+            fileProgress.value.value = progress;
+            fileProgress.value.getElementsByTagName('span')[0].innerText = Math.round(progress) + '%';
+          }
+        });
+
+        xhr.addEventListener('load', async () => {
+          if (xhr.status === 200) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              
               // uploaded successfully but still waiting for transcript
-              context.emit('video-uploaded', true)
+              context.emit('video-uploaded', true);
 
-              videoUrl.value = downloadURL;
+              videoUrl.value = `${backendUrl}${result.url}`;
               const appId = import.meta.env.VITE_SYMBL_APP_ID;
               const appSecret = import.meta.env.VITE_SYMBL_APP_SECRET;
               const symblService = new SymblService();
@@ -127,10 +133,20 @@ export default defineComponent({
                 .catch((error) => {
                   console.error('Error transcribing video:', error);
                 });
-            });
+            } catch (error) {
+              console.error('Error parsing upload response:', error);
+            }
+          } else {
+            console.error('Error during upload:', xhr.statusText);
           }
-        );
+        });
 
+        xhr.addEventListener('error', () => {
+          console.error('Error during upload');
+        });
+
+        xhr.open('POST', `${backendUrl}/upload/video`);
+        xhr.send(formData);
       }
     };
 

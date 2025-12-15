@@ -1,35 +1,35 @@
-from flask import request, Blueprint, Response
+from flask import request, Blueprint, Response, send_from_directory, url_for
 from util.response import  convert_to_json_resp
 import subprocess
 import tempfile
 import os
 import json
-
-import firebase_admin
-from firebase_admin import credentials, storage
-import datetime
 import uuid
 
 
-video_processor_bp = Blueprint('video_processor', __name__)
+audio_processor_bp = Blueprint('audio_processor', __name__)
 
-@video_processor_bp.route('/video/merge', methods=['POST'])
-def merge_audio_video():
+# Create uploads directory if it doesn't exist
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@audio_processor_bp.route('/audio/merge', methods=['POST'])
+def merge_audio():
     try:
-        # Get the uploaded video file from the request
+        # Get the uploaded audio file from the request
         user_audio = request.files['user_audio']
 
         print("user_audio.filename", user_audio.filename)
 
-        # Check if the video file is present
+        # Check if the audio file is present
         if not user_audio:
             return convert_to_json_resp({"error": "user_audio file is required."}), 400
 
-        # Save the uploaded video file to the server
+        # Save the uploaded audio file to the server
         user_audio_filename = 'user_audio.webm'
         user_audio.save(user_audio_filename)
 
-        # Define the output video filename
+        # Define the output audio filename
         output_filename = 'output.mp3'
 
         # Create a temporary directory to store the audio files
@@ -76,10 +76,15 @@ def merge_audio_video():
             os.remove(os.path.join(temp_dir, f'audio_{i}.opus'))
         os.rmdir(temp_dir)
 
-        merged_audio_url = upload_to_firebase(output_filename)
+        # Save merged audio to static uploads folder
+        unique_filename = f"{uuid.uuid4()}.mp3"
+        destination_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+        os.rename(output_filename, destination_path)
+        
+        # Generate URL for the uploaded file
+        merged_audio_url = f"/static/uploads/{unique_filename}"
         print(merged_audio_url)
 
-        os.remove(output_filename)
         os.remove(user_audio_filename)
 
         return convert_to_json_resp({'url': merged_audio_url})
@@ -88,21 +93,3 @@ def merge_audio_video():
     except Exception as e:
         print(e)
         return convert_to_json_resp({"error": str(e)}), 500
-    
-
-def upload_to_firebase(filename):
-    # Initialize Firebase Admin SDK with your service account key
-    bucket = storage.bucket()
-
-    # Upload the merged video to Firebase Storage
-    blob = bucket.blob(f'mergedAudios/interview/{str(uuid.uuid4())}')
-    blob.upload_from_filename(filename)
-
-    # Generate a signed URL for the uploaded video
-    video_url = blob.generate_signed_url(
-        version="v4",
-        expiration=datetime.timedelta(seconds=604800), 
-        method="GET"
-    )
-
-    return video_url

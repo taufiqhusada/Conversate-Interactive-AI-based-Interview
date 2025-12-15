@@ -34,7 +34,7 @@ async def process_get_moments(transcript):
         }]
 
     response = openai.chat.completions.create(
-        model='gpt-3.5-turbo-1106',
+        model='gpt-4o-mini',
         messages=messages,
         temperature=0,
     )

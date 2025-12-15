@@ -53,7 +53,7 @@ export default class GPTService {
 
             // Define the request payload following the cURL example
             const requestData = {
-                model: 'gpt-3.5-turbo',
+                model: 'gpt-4o-mini',
                 transcript: transcript,
                 instruction: instruction,
             };

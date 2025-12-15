@@ -101,7 +101,7 @@ async def generate_gpt_response():
 
         # Define the request payload
         data = {
-            'model': 'gpt-3.5-turbo-1106',
+            'model': 'gpt-4o-mini',
             'messages': messages,
             'temperature': 1,
         }

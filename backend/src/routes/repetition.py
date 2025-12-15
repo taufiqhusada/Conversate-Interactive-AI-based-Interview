@@ -31,7 +31,7 @@ def get_():
     openai = init_openai_config()
 
     response = openai.ChatCompletion.create(
-    model="gpt-4",
+    model="gpt-4o-mini",
     messages=[
         {
         "role": "user",

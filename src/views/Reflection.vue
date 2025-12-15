@@ -88,7 +88,13 @@ export default {
 
           if (retrievedData){
             // Update the reactive variables with the fetched data
-            audioRecordingUrl.value = retrievedData.interview.video_link;
+            const videoLink = retrievedData.interview.video_link;
+            
+            // Prepend backend URL if the URL is relative
+            audioRecordingUrl.value = videoLink.startsWith('http') 
+              ? videoLink 
+              : `${import.meta.env.VITE_BACKEND_URL}${videoLink}`;
+            
             transcript.value = retrievedData.transcript;
             identifiedMoments.value = retrievedData.identifiedMoments;
 
