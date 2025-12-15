@@ -50,7 +50,7 @@ Job interviews play a critical role in shaping one's career, yet practicing inte
 - Node.js 18+ and npm
 - Python 3.8+
 - OpenAI API key
-- Firebase configuration (for data storage)
+- MongoDB connection string
 
 ### Frontend Setup
 
@@ -61,6 +61,10 @@ cd conversate-interview-tool
 
 # Install dependencies
 npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your backend URL (default: http://127.0.0.1:5000)
 
 # Start development server
 npm run dev
@@ -81,11 +85,12 @@ cd backend
 pip install -r requirements.txt
 
 # Set up environment variables
+cd src
 cp .env.example .env
-# Edit .env with your OpenAI API key and other configurations
+# Edit .env with your OpenAI API key, MongoDB URI, and JWT secret
 
 # Run the Flask server
-flask --app src/app.py run
+flask --app app run
 ```
 
 ## 🏗️ Architecture
@@ -99,9 +104,10 @@ flask --app src/app.py run
 
 ### Backend (Flask + Python)
 - **Framework**: Flask with CORS support
-- **AI Integration**: OpenAI GPT-4 for interview simulation and feedback
+- **AI Integration**: OpenAI GPT-4o-mini for interview simulation and feedback
 - **Speech Processing**: Whisper API for speech-to-text conversion
 - **Database**: MongoDB for data persistence
+- **File Storage**: Local file system for audio files
 - **Authentication**: JWT-based user authentication
 
 ### Key Components
