@@ -72,12 +72,7 @@ npm run dev
 
 ### Backend Setup
 
-The backend is included as a git submodule. To set it up:
-
 ```bash
-# Initialize and update submodule
-git submodule update --init --recursive
-
 # Navigate to backend directory
 cd backend
 
@@ -87,11 +82,15 @@ pip install -r requirements.txt
 # Set up environment variables
 cd src
 cp .env.example .env
-# Edit .env with your OpenAI API key, MongoDB URI, and JWT secret
+# Edit .env with your OpenAI API key (REQUIRED)
+# Optionally add MongoDB URI if you want to persist interview data
+# Add JWT secret key for authentication
 
 # Run the Flask server
 flask --app app run
 ```
+
+The server will start on `http://127.0.0.1:5000`. The app works fully without MongoDB - interview data will be stored in browser localStorage instead.
 
 ## 🏗️ Architecture
 
@@ -106,8 +105,8 @@ flask --app app run
 - **Framework**: Flask with CORS support
 - **AI Integration**: OpenAI GPT-4o-mini for interview simulation and feedback
 - **Speech Processing**: Whisper API for speech-to-text conversion
-- **Database**: MongoDB for data persistence
-- **File Storage**: Local file system for audio files
+- **Database**: MongoDB for data persistence (**optional** - app works without it)
+- **File Storage**: Local file system (backend/src/static/uploads/) for audio files
 - **Authentication**: JWT-based user authentication
 
 ### Key Components
