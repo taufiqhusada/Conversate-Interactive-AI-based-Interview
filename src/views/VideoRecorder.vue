@@ -353,6 +353,15 @@ export default {
 
           audioRecordingUrl.value = fullMergedAudioUrl;
 
+          // Store data in localStorage as fallback for when MongoDB is not available
+          localStorage.setItem('interviewData', JSON.stringify({
+            sessionID: sessionID.value,
+            audioUrl: fullMergedAudioUrl,
+            transcript: transcript.value,
+            identifiedMoments: identifiedMoments.value,
+            timestamp: Date.now()
+          }));
+
           if ( respPayload && sessionID.value){
             Cookies.set('keto', respPayload.data.token, { expires: 120 / (24 * 60) });
             Cookies.set('sessionID', sessionID.value,  { expires: 120 / (24 * 60) });

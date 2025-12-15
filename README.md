@@ -50,7 +50,7 @@ Job interviews play a critical role in shaping one's career, yet practicing inte
 - Node.js 18+ and npm
 - Python 3.8+
 - OpenAI API key
-- MongoDB connection string
+- MongoDB connection string (**optional** - app works without it, data persists in-memory only)
 
 ### Frontend Setup
 

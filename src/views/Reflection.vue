@@ -80,7 +80,22 @@ export default {
 
     const fetchAudioRecordingAndTranscript = async () => {
       try {
-        // Call the backend API to get audioRecording and transcript
+        // Try to get data from localStorage first (for when MongoDB is not available)
+        const localData = localStorage.getItem('interviewData');
+        
+        if (localData) {
+          const data = JSON.parse(localData);
+          sessionID.value = data.sessionID;
+          audioRecordingUrl.value = data.audioUrl;
+          transcript.value = data.transcript;
+          identifiedMoments.value = data.identifiedMoments;
+          console.log('Loaded interview data from localStorage');
+          // Clear localStorage after successful retrieval
+          localStorage.removeItem('interviewData');
+          return;
+        }
+        
+        // Fallback to database if localStorage is empty
         sessionID.value = Cookies.get("sessionID");
         const token = Cookies.get('keto')
         if (token){
@@ -104,7 +119,19 @@ export default {
         
       } catch (error) {
         console.error('Error fetching audioRecording and transcript:', error);
-        // Handle error, show error message, etc.
+        // If database fails, try localStorage as last resort
+        const localData = localStorage.getItem('interviewData');
+        if (localData) {
+          const data = JSON.parse(localData);
+          sessionID.value = data.sessionID;
+          audioRecordingUrl.value = data.audioUrl;
+          transcript.value = data.transcript;
+          identifiedMoments.value = data.identifiedMoments;
+          console.log('Loaded interview data from localStorage (fallback)');
+          localStorage.removeItem('interviewData');
+        } else {
+          console.error('No interview data available in localStorage or database');
+        }
       }
     };
 

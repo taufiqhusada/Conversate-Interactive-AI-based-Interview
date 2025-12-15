@@ -1,13 +1,24 @@
-from database.models import InterviewAnnotation
 from flask import request, Blueprint
 from util.response import  convert_to_json_resp
 from config.openai_connector import init_openai_config
+import os
+
+# Check if MongoDB is available
+MONGODB_AVAILABLE = os.getenv('MONGO_URI') is not None
+
+if MONGODB_AVAILABLE:
+    try:
+        from database.models import InterviewAnnotation
+    except Exception:
+        MONGODB_AVAILABLE = False
 
 repetition_bp = Blueprint('repetitions', __name__)
 
 
 @repetition_bp.route('/repetition/feedbacks', methods=['POST'])
 def get_():
+    if not MONGODB_AVAILABLE:
+        return convert_to_json_resp({'error': 'Database not configured', 'response': 'Cannot retrieve past interview data without database'}), 503
     data = request.json
 
     sessionIDs = data['sessionIDs']

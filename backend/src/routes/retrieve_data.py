@@ -1,12 +1,24 @@
 from flask import Blueprint, request, jsonify
-from database.models import Interview, InterviewTranscript, InterviewAnnotation
 from util.response import  convert_to_json_resp
 from util.jwt import verify_and_extract_payload
+import os
+
+# Check if MongoDB is available
+MONGODB_AVAILABLE = os.getenv('MONGO_URI') is not None
+
+if MONGODB_AVAILABLE:
+    try:
+        from database.models import Interview, InterviewTranscript, InterviewAnnotation
+    except Exception:
+        MONGODB_AVAILABLE = False
 
 retrieve_data_bp = Blueprint('retrieve_data_bp', __name__)
 
 @retrieve_data_bp.route('/retrieve', methods=['GET'])
 def get_all_data():
+    if not MONGODB_AVAILABLE:
+        return jsonify({'error': 'Database not configured', 'interview': None, 'transcript': None}), 503
+    
     # Get the token from the Authorization header
     auth_header = request.headers.get('Authorization')
     if not auth_header:

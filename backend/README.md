@@ -14,10 +14,10 @@
    ```
 
 4. Edit `.env` file with your credentials:
-   - `MONGO_URI`: Your MongoDB connection string
-   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `OPENAI_API_KEY`: Your OpenAI API key (**REQUIRED**)
    - `OPENAI_GPT_MODEL`: Model to use (default: gpt-4o-mini)
    - `JWT_SECRET_KEY`: Random secret key for JWT authentication
+   - `MONGO_URI`: Your MongoDB connection string (**OPTIONAL** - app works without it, interview data will be stored in localStorage only)
 
 ## How to Run
 
@@ -76,7 +76,8 @@ The server will run on `http://127.0.0.1:5000` by default.
 ## Technologies
 
 - **Flask**: Web framework
-- **MongoDB**: Database (via mongoengine)
+- **MongoDB**: Database (via mongoengine) - **OPTIONAL** for persistence
 - **OpenAI GPT-4o-mini**: AI model for interview simulation and feedback
+- **localStorage**: Frontend storage for interview data when MongoDB is not configured
 - **FFmpeg**: Audio processing (required for audio merging)
 - **PyJWT**: JWT authentication
