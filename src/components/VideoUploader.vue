@@ -30,7 +30,6 @@
 
 <script lang="ts">
 import { ref, defineComponent, onMounted, watch } from 'vue';
-import SymblService from '@/services/symblService';
 
 export default defineComponent({
   props: {
@@ -117,22 +116,12 @@ export default defineComponent({
             try {
               const result = JSON.parse(xhr.responseText);
               
-              // uploaded successfully but still waiting for transcript
+              // Video uploaded successfully
               context.emit('video-uploaded', true);
-
               videoUrl.value = `${backendUrl}${result.url}`;
-              const appId = import.meta.env.VITE_SYMBL_APP_ID;
-              const appSecret = import.meta.env.VITE_SYMBL_APP_SECRET;
-              const symblService = new SymblService();
-
-              symblService.transcribeVideo(videoUrl.value || '', appId, appSecret)
-                .then(([transcript, sessionID]) => {
-                  context.emit('transcript-updated', transcript, sessionID);
-                  uploadTranscript(transcript, sessionID);
-                })
-                .catch((error) => {
-                  console.error('Error transcribing video:', error);
-                });
+              
+              // Note: Transcription functionality has been removed
+              // You may need to implement alternative transcription if needed
             } catch (error) {
               console.error('Error parsing upload response:', error);
             }
