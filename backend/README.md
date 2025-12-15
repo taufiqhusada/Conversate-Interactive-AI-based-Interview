@@ -16,7 +16,7 @@
 4. Edit `.env` file with your credentials:
    - `OPENAI_API_KEY`: Your OpenAI API key (**REQUIRED**)
    - `OPENAI_GPT_MODEL`: Model to use (default: gpt-4o-mini)
-   - `JWT_SECRET_KEY`: Random secret key for JWT authentication
+   - `JWT_SECRET_KEY`: Random secret key for JWT authentication (fill out with anything)
    - `MONGO_URI`: Your MongoDB connection string (**OPTIONAL** - app works without it, interview data will be stored in localStorage only)
 
 ## How to Run
